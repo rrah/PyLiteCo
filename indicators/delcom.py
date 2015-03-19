@@ -15,7 +15,7 @@ from time import sleep
 class DelcomGen2():
     
     def __init__(self):
-        self.exe = '../control_delcom_gen2.exe'
+        self.exe = './control_delcom_gen2.exe'
         self.allowed_colours = {'green': 'green', 
                                 'blue': 'blue', 
                                 'yellow': 'blue', 
@@ -57,6 +57,10 @@ class DelcomGen2():
     def set_light_green(self):
         
         return self.set_light('green')
+
+    def set_light_off(self):
+
+        return self.set_light('off')
         
     def acquire(self, *args, **kwargs):
 
@@ -76,8 +80,5 @@ class DelcomGen2():
 
 
 if __name__ == '__main__':
-    from time import sleep
-    device = DelcomGen2()
-    device.set_light('off')
-    sleep(1)
-    device.set_light('off')
+    import os
+    os.chdir('..')
