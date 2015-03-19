@@ -39,8 +39,16 @@ class DelcomGen2():
                 raise Exception('Not allowed colour')
                 
             # Make the call to change the colour
-            subprocess.check_call([self.exe, 
+            try:
+                subprocess.check_call([self.exe, 
                                 '--' + self.allowed_colours[colour]])
+            except subprocess.CalledProcessError as e:
+                # Let's try it again!
+                try:
+                    subprocess.check_call(e.cmd)
+                except subprocess.CalledProcessError as e:
+                    # Screw it...
+                    raise e
         
     def set_light_red(self):
         
@@ -81,4 +89,5 @@ class DelcomGen2():
 
 if __name__ == '__main__':
     import os
-    os.chdir('..')
+    if os.getcwd().split['\\'][-1] is not 'echolight':
+        os.chdir('..')
