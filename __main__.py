@@ -5,7 +5,6 @@ import json
 import sys
 from time import sleep
 
-
 import logging
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -35,11 +34,11 @@ def check_status():
     else:
         state = [thing.split('=')[1] for thing in echo_device.capture_status_str().split(';') if 'State' in thing][0]
         if state == 'inactive':
-            indi_device.set_light_off()
+            indi_device.set_light_green()
         elif state == 'active':
-            indi_device.set_light_red()
+            indi_device.set_light_yellow()
         else:
-            indi_device.start_flashing()
+            indi_device.set_light_red()
 try:
     while True:
         check_status()
