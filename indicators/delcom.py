@@ -145,7 +145,24 @@ class DelcomGen2(object):
                                       data,
                                       0x0365,
                                       0x0000,
-                                      100)      
+                                      100)     
+
+    def _read_data(self):
+
+        packet = '\x64\x00\x00\x00\x00\x00\x00\x00'
+        data = self.handle.controlMsg(0x21,
+                                    0x09,
+                                    8,
+                                    0x0064,
+                                    0x0000,
+                                    100)
+        return data
+                                    
+    def read(self):
+        
+        return self._read_data()
+
+
     def _get_current_colour(self):
         
         return self._current_colour
