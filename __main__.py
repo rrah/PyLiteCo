@@ -39,6 +39,8 @@ def check_status(state_old = None):
             indi_device.flashing_start(colours = 'green')
         elif state == 'complete':
             indi_device.flashing_start(colours = 'green')
+        elif state == 'paused':
+            indi_device.set_light_yellow()
         else:
             indi_device.flashing_start()
         return state
