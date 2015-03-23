@@ -1,0 +1,2 @@
+sudo cp -r PyLiteCo/ /usr/local/lib/
+sudo ln -s /usr/local/lib/PyLiteCo/__main__.py /usr/local/bin/pyliteco.py

@@ -4,8 +4,11 @@
 import json
 import sys
 import logging
+import os
 from time import sleep
 
+
+os.chdir('/usr/local/lib/PyLiteCo')
 
 # Local modules
 import echoip
@@ -17,14 +20,15 @@ def logging_set_up(level = logging.DEBUG):
     
     """
     Set up logging so it prints to console"""
-    
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(filename='/var/log/pyliteco.log',level = level, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')    
     root = logging.getLogger()
     root.setLevel(level)
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
-    root.addHandler(ch)
+##    root.addHandler(ch)
     
 
 def load_config(file_ = 'config.json'):
@@ -62,7 +66,7 @@ def check_status(echo_device, indi_device, state_old = None):
 
 
 def main():
-    logging_set_up(level = logging.DEBUG)
+    logging_set_up(level = logging.INFO)
     
     try:
         CONFIG = load_config()
