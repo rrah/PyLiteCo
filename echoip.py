@@ -8,6 +8,6 @@ import urllib2
 
 SERVER = 'http://yorkie/echolight.php'
 
-ECHO_IP = urllib2.urlopen(SERVER).read()
 
-ECHO_URL = 'https://' + ECHO_IP
+def get_echo_ip():
+    return 'https://' + urllib2.urlopen(SERVER).read()
