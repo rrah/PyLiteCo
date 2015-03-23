@@ -27,30 +27,25 @@ class DelcomGen2(object):
     VENDOR_ID       = 0x0FC5    #: Delcom Product ID
     PRODUCT_ID      = 0xB080    #: Delcom Product ID
     INTERFACE_ID    = 0         #: The interface we use
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        self.deviceDescriptor = DeviceDescriptor(self.VENDOR_ID, 
-                                                 self.PRODUCT_ID, 
-                                                 self.INTERFACE_ID)
-        self.device = self.deviceDescriptor.getDevice()
-        if self.device:
-            self.conf = self.device.configurations[0]
-            self.intf = self.conf.interfaces[0][0]
-        else:
-            logging.error("Cable isn't plugged in")
-        self.allowed_colours = {'green': '\x01\xFF', 
+    allowed_colours = {'green': '\x01\xFF', 
                                 'yellow': '\x04\xFF', 
                                 'red': '\x02\xFF',
                                 'orange': '\x03\xFF', 
                                 'off': '\x00\xFF'}
+
+    def __init__(self):
+        '''
+        Constructor'''
+        
+        self.device = usb.core.find(idProduct = self.PRODUCT_ID)
+        try:
+            self.device.detach_kernel_driver(0)
+        except:
+            pass
+        self.device.set_configuration()
         self._current_colour = 'off'
         
-        self.open()
-        self.writeData("\x65\x0C\x00\xFF\x00\x00\x00\x00")
-        self.close()
+        self.set_light_off()
 
     def _flash(self, flash_speed = 1, colours = 'red'):
         
@@ -93,66 +88,16 @@ class DelcomGen2(object):
             self._flashing = False
             self._flash_thread.join()
             del self._flash_thread
-    
-    def open(self):
-        
-        """ 
-        Open the Delcom Interface """
-        
-        self.handle = self.device.open()
-        try:
-            self.handle.detachKernelDriver(0)
-        except:
-            pass
-        self.handle.claimInterface(self.intf) # Interface 0   
-
-    def close(self):
-        
-        """ 
-        Release Delcom interface """
-        
-        try:
-            self.handle.releaseInterface()
-        except Exception, err:
-            logging.error(sys.stderr, err)
-
-    def getManufactureName(self):
-        """ Manufacturer of device """
-        return self.handle.getString(self.device.iManufacturer,30)
-
-    
-    def getProductName(self):
-        """ Product name of device """
-        return self.handle.getString(self.device.iProduct,30)
 
         
-    def writeData(self, data):
-        """ 
-        Write data to device:
-                0x21   = REQ_TYPE: DIR = Host to Device
-                         REQ_TYPE: TYPE = Class
-                         REQ_TYPE: REC = Interface
-                0x09   = REQUEST: HID-Set Report
-                data   = Command sent to Delcom device
-                0x0365 = VALUE: 0x65 = ReportID = 101 = MajorCMD
-                         VALUE: 0x03 = Report Type = Feature Report
-                0x0000 = Interface number = 0
-                100    = timeout 100mS
-        """
+    def _write_data(self, data):
 
-        self.handle.controlMsg(0x21,
-                                0x09,
-                                data,
-                                0x0365,
-                                0x0000,
-                                100)     
+        self.device.ctrl_transfer(0x21, 0x09, 0x0365, 0x0000, data, 100)
 
     def _read_data(self):
 
         packet = '\x64\x00\x00\x00\x00\x00\x00\x00'
-
-        
-        data = self.handle.read(0x81, 8)
+        data = self.device.ctrl_transfer(0xA1, 0x08, 0x0064, 0x0000, 8)
         return data
                                     
     def read(self):
@@ -177,11 +122,9 @@ class DelcomGen2(object):
             return
             
         # Make the call to change the colour
-        self.open()
         msg = "\x65\x0C{}\x00\x00\x00\x00".format(self.allowed_colours[colour])
-        self.writeData("\x65\x0C\x00\xFF\x00\x00\x00\x00")
-        self.writeData(msg)
-        self.close()
+        self._write_data("\x65\x0C\x00\xFF\x00\x00\x00\x00")
+        self._write_data(msg)
         
         self._current_colour = colour
         
