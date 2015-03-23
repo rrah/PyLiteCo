@@ -6,16 +6,15 @@ Module for delcom status lights.
 Author: Robert Walker <rw776@york.ac.uk> 19/03/15
 """
 
-import subprocess
-
+# Builtin imports
 import threading
-
-import usb
 import sys
-
 import logging
-
 from time import sleep
+
+
+# Does communication to usb. Surprisingly
+import usb
 
 
 class DelcomGen2(object):
@@ -55,12 +54,13 @@ class DelcomGen2(object):
 
     def _flash(self, flash_speed = 1, colours = 'red'):
         
+        """
+        function for flash thread to run"""
+        
         if type(colours) is list:
             flash_list = colours
         else:
             flash_list = [colours, 'off']
-        
-        flash_colour = self._get_current_colour()
         
         while self._flashing:
             for colour in flash_list:
@@ -140,22 +140,19 @@ class DelcomGen2(object):
                 100    = timeout 100mS
         """
 
-        sent = self.handle.controlMsg(0x21,
-                                      0x09,
-                                      data,
-                                      0x0365,
-                                      0x0000,
-                                      100)     
+        self.handle.controlMsg(0x21,
+                                0x09,
+                                data,
+                                0x0365,
+                                0x0000,
+                                100)     
 
     def _read_data(self):
 
         packet = '\x64\x00\x00\x00\x00\x00\x00\x00'
-        data = self.handle.controlMsg(0x21,
-                                    0x09,
-                                    8,
-                                    0x0064,
-                                    0x0000,
-                                    100)
+
+        
+        data = self.handle.read(0x81, 8)
         return data
                                     
     def read(self):
@@ -219,6 +216,10 @@ class DelcomGen2(object):
         return self.set_light('off')
         
     def __del__(self):
+        
+        """
+        Stop any flashing and set the light to off at
+        destruction"""
         
         self.flashing_stop()
         self.set_light_off()
