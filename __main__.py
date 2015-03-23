@@ -14,6 +14,10 @@ import indicators.delcom as delcom
 
 
 def logging_set_up(level = logging.DEBUG):
+    
+    """
+    Set up logging so it prints to console"""
+    
     root = logging.getLogger()
     root.setLevel(level)
     ch = logging.StreamHandler(sys.stdout)
@@ -56,14 +60,14 @@ def check_status(state_old = None):
         indi_device.flashing_start()
     return state
 
-logging_set_up()
+logging_set_up(level = logging.INFO)
 
 try:
     CONFIG = load_config()
 except IOError:
     import shutil
     shutil.copyfile('config.json.example', 'config.json')
-    CONFIG = load_config(file_)
+    CONFIG = load_config()
 
 try:
     # Initialise some variables
