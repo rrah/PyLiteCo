@@ -68,7 +68,7 @@ class DelcomGen2(object):
                 sleep(flash_speed)
         return
 
-    def flashing_start(self, flash_speed, colours):
+    def flashing_start(self, flash_speed = 1, colours = 'red'):
         
         """
         flash_speed = how long to spend on each step of the flash
@@ -84,7 +84,7 @@ class DelcomGen2(object):
             self.flashing_stop
         self._flashing = True
         self._flash_thread = threading.Thread(target = self._flash, kwargs = kwargs)
-        self._flash_thread.deamon = True
+        self._flash_thread.daemon = True
         self._flash_thread.start()
         
     def flashing_stop(self):
@@ -177,7 +177,7 @@ class DelcomGen2(object):
         Check if flashing and stop flashing"""
         
         if hasattr(self, '_flash_thread'):
-            self.stop_flashing()
+            self.flashing_stop()
         self._set_light(*args, **kwargs)
 
         
@@ -200,6 +200,11 @@ class DelcomGen2(object):
     def set_light_off(self):
 
         return self.set_light('off')
+        
+    def __del__(self):
+        
+        self.flashing_stop()
+        self.set_light_off()
 
 
 class DeviceDescriptor(object):
