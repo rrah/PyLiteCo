@@ -1,6 +1,6 @@
 # Dependencies
-apt-get install python2.7 git python-pip
-pip-install pyusb
+apt-get update && apt-get install -y python2.7 git python-pip
+pip install pyusb
 
 # Get main repository
 cd /usr/local/lib/
