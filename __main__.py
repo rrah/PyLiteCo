@@ -57,9 +57,12 @@ def load_config(file_ = 'config.json'):
     """
     Try to load the given JSON config file and return data structure"""
     
-    with open(file_) as CONFIG_FILE:
-        return json.load(CONFIG_FILE)
-    
+    try:
+        with open(file_) as CONFIG_FILE:
+            return json.load(CONFIG_FILE)
+    except ValueError:
+        logging.exception('Bad config file')    
+        
     
 def get_light_state_config():
     
@@ -86,6 +89,7 @@ def get_light_action(config_json, device):
             return device.set_light(config_json['colour'])
     except KeyError:
         logging.exception('Bad config file')
+        raise
         
     
 def check_status(echo_device, indi_device, state_old = None):
@@ -157,10 +161,16 @@ def main():
     except KeyboardInterrupt:
         # Someone wants to escape!
         pass
+    except:
+        logging.exception()
+        raise
     finally:
         # Bit of cleaning up as delcom throws 
         # some other threads around
-        del indi_device
+        try:
+            del indi_device
+        except:
+            pass
     
 if __name__ == '__main__':
     main()
