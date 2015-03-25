@@ -99,7 +99,10 @@ def check_status(echo_device, indi_device, state_old = None):
         return state
     logging.info('Change of state from {} to {}'.format(state_old, state))
     if state in ['inactive', 'active', 'waiting', 'complete', 'paused']:
-        get_light_action(light_state_config[state], indi_device)
+        try:
+            get_light_action(light_state_config[state], indi_device)
+        except KeyError:
+            logging.exception('Bad light state config')
     else:
         indi_device.flashing_start()
     return state
