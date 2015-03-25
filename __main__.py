@@ -153,7 +153,7 @@ def main():
                 while True:
                     try:
                         state = check_status(echo_device, indi_device, state)
-                        sleep(0.5) # For niceness
+                        sleep(1) # For niceness
                     except IndexError:
                         logging.error('Bad message - lost connection')
                         break
