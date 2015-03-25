@@ -7,11 +7,12 @@ Thing to control a light using the state of an echo360 recorder
  - Delcom Gen2 Visual Indicator
  
 <h2> Running </h2>
- - Copy 99-usb--delcom.rules into /etc/udev and run: <br>
- <code>udevadm control --reload-rules</code>
- - Run:
- <code>python \_\_main\_\_.py</code>
- 
+Running the code in the install file as root will install all dependencies and set PyLiteCo to run as a service. It can then be started with
+
+<code>service pyliteco start</code>
+
+Don't forget to copy config.json.example to config.json and set the username and password to the correct value for the echo box.
+
 <h2> To-do </h2>
- - Check any requirements to run control_delcom_gen2.exe
- - Like, everything!
+ - Not run as root
+ - Nice .deb?
