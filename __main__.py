@@ -1,5 +1,26 @@
 #!/usr/bin/python
 
+"""
+Looks at echo box and changes light depending on state
+
+Author: Robert Walker <rw776@york.ac.uk>
+
+Copyright (C) 2015 Robert Walker
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; version 2.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
 # Built-in modules
 import json
 import sys
@@ -28,7 +49,7 @@ def logging_set_up(level = logging.DEBUG):
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(level)
     ch.setFormatter(formatter)
-##    root.addHandler(ch)
+    root.addHandler(ch)
     
 
 def load_config(file_ = 'config.json'):
@@ -40,6 +61,33 @@ def load_config(file_ = 'config.json'):
         return json.load(CONFIG_FILE)
     
     
+def get_light_state_config():
+    
+    import urllib2
+    
+    return json.loads(urllib2.urlopen("http://yorkie/echolight.php?config").read())
+    
+def get_light_action(config_json, device):
+    
+    """
+    Return the method to set the light to what the config file wants"""
+    
+    try:
+        if config_json['flash']:
+            
+            return device.flashing_start(colours = config_json['colour'], flash_speed = config_json['flash_speed'])
+        
+        if config_json['colour'] == list:
+            
+            return device.set_light(config_json['colour'][0])
+        
+        else:
+            
+            return device.set_light(config_json['colour'])
+    except KeyError:
+        logging.exception('Bad config file')
+        
+    
 def check_status(echo_device, indi_device, state_old = None):
     
     """
@@ -50,16 +98,8 @@ def check_status(echo_device, indi_device, state_old = None):
     if state_old == state: # Avoid unneccesary changes
         return state
     logging.info('Change of state from {} to {}'.format(state_old, state))
-    if state == 'inactive':
-        indi_device.set_light_off()
-    elif state == 'active':
-        indi_device.set_light_red()
-    elif state == 'waiting':
-        indi_device.flashing_start(colours = 'green')
-    elif state == 'complete':
-        indi_device.flashing_start(colours = 'green')
-    elif state == 'paused':
-        indi_device.set_light_yellow()
+    if state in ['inactive', 'active', 'waiting', 'complete', 'paused']:
+        get_light_action(light_state_config[state], indi_device)
     else:
         indi_device.flashing_start()
     return state
@@ -67,6 +107,9 @@ def check_status(echo_device, indi_device, state_old = None):
 
 def main():
     logging_set_up(level = logging.INFO)
+    global light_state_config
+    light_state_config = get_light_state_config()
+    logging.info('Loaded light states from server')
     
     try:
         CONFIG = load_config()

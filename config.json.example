@@ -1,3 +1,7 @@
+# Example configuration file.
+# 
+# Fill in with relevant information
+
 {
 "user": "user",
 "pass": "pass"
