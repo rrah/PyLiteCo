@@ -108,7 +108,8 @@ def check_status(echo_device, indi_device, state_old = None):
         except KeyError:
             logging.exception('Bad light state config')
     else:
-        indi_device.flashing_start()
+        get_light_action(light_state_config['unknown'], indi_device)
+        logging.warning('Echo box in unknown state: {}'.format(state)
     return state
 
 
@@ -141,7 +142,7 @@ def main():
                 # Failed to connect, will try again
                 logging.error('Something went wrong connecting. Will try again in 10 seconds')
                 if not error_flash:
-                    indi_device.flashing_start(colours = ['red', 'yellow'])
+                    get_light_action(light_state_config['error'], indi_device)
                     error_flash = True
                 sleep(10)
             else:
