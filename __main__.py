@@ -109,7 +109,7 @@ def check_status(echo_device, indi_device, state_old = None):
             logging.exception('Bad light state config')
     else:
         get_light_action(light_state_config['unknown'], indi_device)
-        logging.warning('Echo box in unknown state: {}'.format(state)
+        logging.warning('Echo box in unknown state: {}'.format(state))
     return state
 
 
