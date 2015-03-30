@@ -31,6 +31,9 @@ from time import sleep
 # Does communication to usb. Surprisingly
 import usb
 
+PIN_GREEN   = 0b00000001
+PIN_YELLOW  = 0b00000010
+PIN_RED     = 0b00000100
 
 class DelcomGen2(object):
     '''
@@ -47,6 +50,10 @@ class DelcomGen2(object):
                                 'red': '\x02\xFF',
                                 'orange': '\x03\xFF', 
                                 'off': '\x00\xFF'}
+    _colour_pins = { 'green'     : 1,
+                    'yellow'    : 4,
+                    'red'       : 2
+                    }
 
     def __init__(self):
         '''
@@ -61,49 +68,64 @@ class DelcomGen2(object):
         self._current_colour = 'off'
         
         self.set_light_off()
-
-    def _flash(self, flash_speed = 1, colours = 'red'):
         
-        """
-        function for flash thread to run"""
+        self._flashing_pin = None
         
-        if type(colours) is list:
-            flash_list = colours
-        else:
-            flash_list = [colours, 'off']
-        
-        while self._flashing:
-            for colour in flash_list:
-                self._set_light(colour)
-                sleep(flash_speed)
-        return
+        self.set_brightness(50)
 
     def flashing_start(self, flash_speed = 1, colours = 'red'):
         
-        """
-        flash_speed = how long to spend on each step of the flash
-                        default: 1
-        colours = what colour(s) to flash. If list flash between, 
-                    otherwise on/off that colour.
-                        default: red
-        """
+        # Get the flash speed in the right range
+        if flash_speed > 2.55:
+            flash_speed = 2.55
+        elif flash_speed < 0.01:
+            flash_speed = 0.01
         
-        kwargs = {'flash_speed':flash_speed, 
-                    'colours': colours}
-        if hasattr(self, '_flash_thread'):
-            self.flashing_stop
-        self._flashing = True
-        self._flash_thread = threading.Thread(target = self._flash, kwargs = kwargs)
-        self._flash_thread.daemon = True
-        self._flash_thread.start()
+        # and change from seconds to value that is given
+        # to the device
+        flash_speed = int(flash_speed * 100)
+        
+        # Turn on the relevant LEDs
+        self.set_light(colours)
+        
+        # Set the flash speed and start flashing
+        self._write_data(self._make_packet(0x65, 20 + 
+                                        self._colour_pins[colours], 
+                                        flash_speed, flash_speed))
+        self._write_data(self._make_packet(0x65, 20, 0, 
+                                            self._colour_pins[colours]))
+        
+        # Keep track of what pin is flashing
+        self._flashing_pin = self._colour_pins[colours]
         
     def flashing_stop(self):
         
-        if hasattr(self, '_flash_thread'):
-            self._flashing = False
-            self._flash_thread.join()
-            del self._flash_thread
 
+        # Check if a pin is actually flashing, and if so
+        # turn it off and turn off flashing
+        if self._flashing_pin is not None:
+            self.set_light('off')
+            self._write_data(self._make_packet(101, 20, 
+                                                self._flashing_pin, 0))
+
+    def _make_packet(self, maj_cmd, min_cmd, lsb = 0x00, msb = 0x00):
+        
+        return bytearray([maj_cmd, min_cmd, lsb, msb, 
+                                            0x00, 0x00, 0x00, 0x00])
+
+    def set_brightness(self, brightness):
+        
+        self._set_pwr(brightness)
+
+    def _set_pwr(self, pwr):
+        
+        if pwr > 100:
+            pwr = 100
+        elif pwr < 0:
+            pwr = 0
+        self._write_data(self._make_packet(101, 34, 0, pwr))
+        self._write_data(self._make_packet(101, 34, 1, pwr))
+        self._write_data(self._make_packet(101, 34, 2, pwr))
         
     def _write_data(self, data):
 

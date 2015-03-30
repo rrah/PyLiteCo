@@ -75,6 +75,9 @@ def get_light_action(config_json, device):
     """
     Return the method to set the light to what the config file wants"""
     
+    # Stop any flashing
+    device.flashing_stop()
+    
     try:
         if config_json['flash']:
             
