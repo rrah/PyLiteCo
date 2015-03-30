@@ -163,7 +163,7 @@ def main():
         # Someone wants to escape!
         pass
     except:
-        logging.exception()
+        logging.exception(None)
         raise
     finally:
         # Bit of cleaning up as delcom throws 
