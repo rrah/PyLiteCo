@@ -50,8 +50,8 @@ try:
     import indicators.delcom as delcom
     device = delcom.DelcomGen2()
     while True:
-        print device.read()
-        sleep(1)        
+        print device.has_been_pressed()
+        sleep(3)
 
 except KeyboardInterrupt:
     device.flashing_stop()

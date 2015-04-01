@@ -65,13 +65,21 @@ class DelcomGen2(object):
         except:
             pass
         self.device.set_configuration()
+        
+        # Set some default attributes
+        self._flashing_pin = None
+        self._pressed = False
         self._current_colour = 'off'
+        self._been_pressed = False
         
         self.set_light_off()
         
-        self._flashing_pin = None
+        # Turn on event counter
+        self._write_data(self._make_packet(101, 38, 0x01))
         
         self.set_brightness(50)
+        
+        
 
     def flashing_start(self, flash_speed = 1, colours = 'red'):
         
@@ -131,15 +139,46 @@ class DelcomGen2(object):
 
         self.device.ctrl_transfer(0x21, 0x09, 0x0365, 0x0000, data, 100)
 
-    def _read_data(self):
+    def read_switch(self):
+    
+        """
+        See if the button has been pressed or not"""
+       
+        presses = 0
+        counter = int(self._read_data(0x0008)[0])
+        self._pressed = not bool(int(self._read_data(0x0064)[0]) % 2)
+        # Count up the number of presses since last read
+        while counter > 0:
+            presses += 1
+            counter -= 1 
+        if presses > 0:
+            self._been_pressed = True
+        return presses, self._pressed
+        
+    def has_been_pressed(self):
+        
+        """
+        Check to see if the button has been pressed."""
+        
+        self.read_switch()
+        been_pressed = self._been_pressed
+        
+        # Reset attribute
+        self._been_pressed = False
+        return been_pressed
 
-        packet = '\x64\x00\x00\x00\x00\x00\x00\x00'
-        data = self.device.ctrl_transfer(0xA1, 0x08, 0x0064, 0x0000, 8)
+    def get_pressed(self):
+        
+        return self._pressed
+
+    def _read_data(self, cmd):
+
+        data = self.device.ctrl_transfer(0xA1, 0x01, cmd, 0x0000, 8, 100)
         return data
                                     
     def read(self):
         
-        return self._read_data()
+        return self._read_data(0x0008)
 
 
     def _get_current_colour(self):

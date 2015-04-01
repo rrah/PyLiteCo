@@ -71,7 +71,11 @@ def get_light_state_config():
     
     import urllib2
     
-    return json.loads(urllib2.urlopen("http://yorkie/echolight.php?config").read())
+    try:
+        return json.loads(urllib2.urlopen("http://yorkie/echolight.php?config").read())
+    except ValueError:
+        logging.error('Could not get configuration from server')
+        exit(1)
     
 def get_light_action(config_json, device):
     
@@ -119,6 +123,16 @@ def check_status(echo_device, indi_device, state_old = None):
     return state
 
 
+def check_button_status(indi_device, echo_device, state = None):
+    
+    if indi_device.has_been_pressed():
+        if state == 'active':
+            # recording, so pause
+            echo_device.capture_pause()
+        elif state == 'paused':
+            # paused, so restart
+            echo_device.capture_record()
+
 def main():
     logging_set_up(level = logging.INFO)
     global light_state_config
@@ -160,6 +174,7 @@ def main():
                 while True:
                     try:
                         state = check_status(echo_device, indi_device, state)
+                        check_button_status(indi_device, echo_device, state)
                         sleep(1) # For niceness
                     except IndexError:
                         logging.error('Bad message - lost connection')
