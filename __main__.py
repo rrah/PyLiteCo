@@ -20,6 +20,9 @@ Copyright (C) 2015 Robert Walker
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+# For freeze
+from encodings import hex_codec, utf_8_sig, utf_8, ascii
+
 
 # Built-in modules
 import json
@@ -29,7 +32,7 @@ import os
 from time import sleep
 
 
-os.chdir('/usr/local/lib/PyLiteCo')
+##os.chdir('/usr/local/lib/PyLiteCo')
 
 # Local modules
 import echoip
@@ -123,11 +126,11 @@ def main():
     logging.info('Loaded light states from server')
     
     try:
-        CONFIG = load_config()
+        CONFIG = load_config('/etc/pyliteco.json')
     except IOError:
         import shutil
-        shutil.copyfile('config.json.example', 'config.json')
-        CONFIG = load_config()
+        shutil.copyfile('config.json.example', '/etc/pyliteco.json')
+        CONFIG = load_config('/etc/pyliteco.json')
     
     try:
         # Initialise some variables
