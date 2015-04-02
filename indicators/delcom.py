@@ -74,12 +74,11 @@ class DelcomGen2(object):
         
         self.set_light_off()
         
-        # Turn on event counter
+        # Turn on event counter and reset
         self._write_data(self._make_packet(101, 38, 0x01))
+        self._read_data(0x0008)
         
         self.set_brightness(50)
-        
-        
 
     def flashing_start(self, flash_speed = 1, colours = 'red'):
         

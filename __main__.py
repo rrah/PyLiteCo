@@ -126,6 +126,7 @@ def check_status(echo_device, indi_device, state_old = None):
 def check_button_status(indi_device, echo_device, state = None):
     
     if indi_device.has_been_pressed():
+        logging.debug('Button pressed while in state {}'.format(state))
         if state == 'active':
             # recording, so pause
             echo_device.capture_pause()
@@ -134,7 +135,7 @@ def check_button_status(indi_device, echo_device, state = None):
             echo_device.capture_record()
 
 def main():
-    logging_set_up(level = logging.INFO)
+    logging_set_up(level = logging.DEBUG)
     global light_state_config
     light_state_config = get_light_state_config()
     logging.info('Loaded light states from server')
