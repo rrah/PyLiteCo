@@ -180,6 +180,8 @@ def main():
                     except IndexError:
                         logging.error('Bad message - lost connection')
                         break
+                    except KeyboardInterrupt:
+                        raise KeyboardInterrupt
                     except:
                         logging.exception('Something went a little wrong. Continuing loop')
                     
