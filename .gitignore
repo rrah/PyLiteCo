@@ -1,3 +1,5 @@
 config.json
 *.pyc
 .token
+pyliteco.json
+pyliteco.log
