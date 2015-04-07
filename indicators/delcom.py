@@ -83,6 +83,9 @@ class DelcomGen2(object):
     
     def _force_off(self):
         
+        """
+        Make sure flashing/LEDs are definitely turned off"""
+        
         self._write_data("\x65\x0C\x00\xFF\x00\x00\x00\x00")
         self._write_data(self._make_packet(101, 20, 1))
         self._write_data(self._make_packet(101, 20, 2))

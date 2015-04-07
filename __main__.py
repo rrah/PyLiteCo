@@ -32,8 +32,6 @@ import os
 from time import sleep
 
 
-##os.chdir('/usr/local/lib/PyLiteCo')
-
 # Local modules
 import echoip
 import echo360.capture_device as echo
@@ -76,7 +74,8 @@ def get_light_state_config():
     except ValueError:
         logging.error('Could not get configuration from server')
         exit(1)
-    
+
+
 def get_light_action(config_json, device):
     
     """
@@ -134,14 +133,23 @@ def check_button_status(indi_device, echo_device, state = None):
             # paused, so restart
             echo_device.capture_record()
 
+
 def main():
     
+    platform = sys.platform
     if sys.platform == 'win32':
+        # TODO: Check what x64 returns
         log_file = 'pyliteco.log'
         config_file = 'pyliteco.json'
-    else:
+    elif platform == 'linux2':
+        # Definitely raspbian, maybe others
         log_file = '/var/log/pyliteco.log'
         config_file = '/etc/pyliteco.json'
+    else:
+        # Catch all the rest and store locally
+        log_file = 'pyliteco.log'
+        config_file = 'pyliteco.json'
+    
     logging_set_up(level = logging.DEBUG, log_file = log_file)
     
     logging.info('Starting up')
@@ -152,10 +160,9 @@ def main():
     try:
         CONFIG = load_config(config_file)
     except IOError:
-        import shutil
-        shutil.copyfile('config.json.example', config_file)
-        CONFIG = load_config(config_file)
-    
+        from example import EXAMPLE_CONFIG_JSON as CONFIG
+        with open(config_file, 'a') as file_:
+            json.dump(CONFIG, file_)    
     try:
         # Initialise some variables
         error_flash = False
