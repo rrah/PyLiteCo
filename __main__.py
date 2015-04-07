@@ -21,7 +21,7 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from pyliteco import __main__
+from pyliteco import main
 
 if __name__ == '__main__':
     main()
