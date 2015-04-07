@@ -3,3 +3,5 @@ config.json
 .token
 pyliteco.json
 pyliteco.log
+build/
+dist/
