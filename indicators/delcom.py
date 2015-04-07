@@ -59,6 +59,12 @@ class DelcomGen2(object):
         '''
         Constructor'''
         
+        # Set some default attributes
+        self._flashing_pin = None
+        self._pressed = False
+        self._current_colour = 'off'
+        self._been_pressed = False
+        
         self.device = usb.core.find(idProduct = self.PRODUCT_ID)
         try:
             self.device.detach_kernel_driver(0)
@@ -66,19 +72,21 @@ class DelcomGen2(object):
             pass
         self.device.set_configuration()
         
-        # Set some default attributes
-        self._flashing_pin = None
-        self._pressed = False
-        self._current_colour = 'off'
-        self._been_pressed = False
+        self._force_off()
         
-        self.set_light_off()
         
         # Turn on event counter and reset
         self._write_data(self._make_packet(101, 38, 0x01))
         self._read_data(0x0008)
         
         self.set_brightness(50)
+    
+    def _force_off(self):
+        
+        self._write_data("\x65\x0C\x00\xFF\x00\x00\x00\x00")
+        self._write_data(self._make_packet(101, 20, 1))
+        self._write_data(self._make_packet(101, 20, 2))
+        self._write_data(self._make_packet(101, 20, 4))        
 
     def flashing_start(self, flash_speed = 1, colours = 'red'):
         
@@ -144,8 +152,18 @@ class DelcomGen2(object):
         See if the button has been pressed or not"""
        
         presses = 0
-        counter = int(self._read_data(0x0008)[0])
-        self._pressed = not bool(int(self._read_data(0x0064)[0]) % 2)
+        counter_data = []
+        pressed_data = []
+        
+        # Sometimes doesn't get a return, so repeat until data is got
+        while len(counter_data) != 8:
+            counter_data = self._read_data(0x0008)
+        while len(pressed_data) != 8:
+            pressed_data = self._read_data(0x0064)
+        
+        counter = int(counter_data[0])
+        self._pressed = not bool(int(pressed_data[0]) % 2)
+        
         # Count up the number of presses since last read
         while counter > 0:
             presses += 1
