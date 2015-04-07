@@ -199,7 +199,7 @@ def main():
                     try:
                         state = check_status(echo_device, indi_device, state)
                         check_button_status(indi_device, echo_device, state)
-                        sleep(1) # For niceness
+                        sleep(0.5) # For niceness
                     except IndexError:
                         logging.exception('Bad message - lost connection')
                     except KeyboardInterrupt:
