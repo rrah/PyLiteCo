@@ -142,7 +142,7 @@ def main():
     else:
         log_file = '/var/log/pyliteco.log'
         config_file = '/etc/pyliteco.json'
-    logging_set_up(level = logging.DEBUG)
+    logging_set_up(level = logging.DEBUG, log_file = log_file)
     
     logging.info('Starting up')
     logging.debug('Running on {}'.format(sys.platform))
