@@ -24,4 +24,10 @@ Copyright (C) 2015 Robert Walker
 from pyliteco import main
 
 if __name__ == '__main__':
-    main()
+    
+    import argparse
+    
+    parser = argparse.ArgumentParser("Start the pyliteco program")
+    parser.add_argument('-c', dest = 'config_file_entered', default = None, metavar = 'Config file')
+    parser.add_argument('-l', dest = 'log_file_entered', default = None, metavar = 'Log file')
+    main(**vars(parser.parse_args()))

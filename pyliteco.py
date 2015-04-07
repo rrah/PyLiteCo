@@ -133,7 +133,9 @@ def check_button_status(indi_device, echo_device, state = None):
             echo_device.capture_record()
 
 
-def main():
+def main(config_file_entered = None, log_file_entered = None):
+    
+    print config_file_entered, log_file_entered
     
     platform = sys.platform
     if sys.platform == 'win32':
@@ -153,6 +155,11 @@ def main():
     
     logging.info('Starting up')
     logging.debug('Running on {}'.format(sys.platform))
+    
+    if config_file_entered is not None:
+        config_file = config_file_entered
+    if log_file_entered is not None:
+        log_file = log_file_entered
     
     
     # Check config definitely exists
