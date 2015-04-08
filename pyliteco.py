@@ -30,6 +30,8 @@ import logging
 import os
 from time import sleep
 import threading
+import logging.handlers
+import pywintypes
 
 
 # Local modules
@@ -52,6 +54,12 @@ def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
     ch.setFormatter(formatter)
     root.addHandler(ch)
     
+    try:
+        nthandler = logging.handlers.NTEventLogHandler('pyliteco')
+        nthandler.setLevel(level)
+        root.addHandler(nthandler)
+    except pywintypes.error:
+        pass
 
 def load_config(file_ = 'config.json'):
     
@@ -168,7 +176,7 @@ class Main_Thread():
             log_file = 'pyliteco.log'
             config_file = 'pyliteco.json'
         
-        logging_set_up(level = logging.DEBUG, log_file = log_file)
+        logging_set_up(level = logging.INFO, log_file = log_file)
         
         logging.info('Starting up')
         logging.debug('Running on {}'.format(sys.platform))
