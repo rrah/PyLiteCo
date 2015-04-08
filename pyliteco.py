@@ -73,7 +73,7 @@ def get_light_state_config():
         return json.loads(urllib2.urlopen("http://yorkie/echolight.php?config").read())
     except ValueError:
         logging.error('Could not get configuration from server')
-        exit(1)
+        sys.exit(1)
 
 
 def get_light_action(config_json, device):
@@ -150,7 +150,6 @@ class Main_Thread():
         return self.running
     
     def stop(self):
-        print 'Boom'
         self.running = False
     
     def run(self, config_file_entered = None, log_file_entered = None):
@@ -243,7 +242,7 @@ class Main_Thread():
             pass
         except:
             logging.exception(None)
-            exit(1)
+            sys.exit(1)
         finally:
             # Bit of cleaning up as delcom throws 
             # some other threads around
