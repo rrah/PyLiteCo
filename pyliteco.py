@@ -29,6 +29,7 @@ import sys
 import logging
 import os
 from time import sleep
+import threading
 
 
 # Local modules
@@ -132,105 +133,122 @@ def check_button_status(indi_device, echo_device, state = None):
             # paused, so restart
             echo_device.capture_record()
 
-
-def main(config_file_entered = None, log_file_entered = None):
+class Main_Thread():
+    running = False
     
-    print config_file_entered, log_file_entered
-    
-    platform = sys.platform
-    if sys.platform == 'win32':
-        # TODO: Check what x64 returns
-        log_file = 'pyliteco.log'
-        config_file = 'pyliteco.json'
-    elif platform == 'linux2':
-        # Definitely raspbian, maybe others
-        log_file = '/var/log/pyliteco.log'
-        config_file = '/etc/pyliteco.json'
-    else:
-        # Catch all the rest and store locally
-        log_file = 'pyliteco.log'
-        config_file = 'pyliteco.json'
-    
-    logging_set_up(level = logging.DEBUG, log_file = log_file)
-    
-    logging.info('Starting up')
-    logging.debug('Running on {}'.format(sys.platform))
-    
-    if config_file_entered is not None:
-        config_file = config_file_entered
-    if log_file_entered is not None:
-        log_file = log_file_entered
-    
-    
-    # Check config definitely exists
-    try:
-        CONFIG = load_config(config_file)
-    except IOError:
-        from example import EXAMPLE_CONFIG_JSON as CONFIG
-        with open(config_file, 'a') as file_:
-            json.dump(CONFIG, file_)    
-    try:
-        # Initialise some variables
-        error_flash = False
+    def __init__(self, config_file, log_file):
+        ##threading.Thread.__init__(self)
+        self.arguments = {"config_file_entered":config_file,
+                          "log_file_entered":log_file}
         
-        # And the indicator device
-        indi_device = delcom.DelcomGen2()
+    def start(self):
+        self.running = True
+        self.run(**self.arguments)
         
-        # Loop until connection
-        while True:
-            global light_state_config
-            light_state_config = get_light_state_config()
-            logging.info('Loaded light states from server')
-            
-            # Reload config
-            CONFIG = load_config(config_file)
-            logging.debug(CONFIG)
-            
-            # Get ip of echo box
-            ECHO_URL = echoip.get_echo_ip()
-            logging.info('Got echo url {}'.format(ECHO_URL))
-            
-            # Try to connect
-            echo_device = echo.Echo360CaptureDevice(ECHO_URL, CONFIG['user'], CONFIG['pass'])
-            if not echo_device.connection_test.success():
-                # Failed to connect, will try again
-                logging.error('Something went wrong connecting. Will try again in 10 seconds')
-                logging.debug(echo_device.connection_test)
-                
-                # Check if currently doing error flash and 
-                if not error_flash:
-                    get_light_action(light_state_config['error'], indi_device)
-                    error_flash = True
-                sleep(10)
-            else:
-                # Connected, so (re)set some more variables
-                error_flash = False
-                state = None
-                
-                # And loop for status
-                while True:
-                    try:
-                        state = check_status(echo_device, indi_device, state)
-                        check_button_status(indi_device, echo_device, state)
-                        sleep(0.5) # For niceness
-                    except IndexError:
-                        logging.exception('Bad message - lost connection')
-                    except KeyboardInterrupt:
-                        raise KeyboardInterrupt
-                    except:
-                        logging.exception('Something went a little wrong. Continuing loop')
-                    
-    except KeyboardInterrupt:
-        # Someone wants to escape!
-        pass
-    except:
-        logging.exception(None)
-        exit(1)
-    finally:
-        # Bit of cleaning up as delcom throws 
-        # some other threads around
+    def is_running(self):
+        
+        return self.running
+    
+    def stop(self):
+        print 'Boom'
+        self.running = False
+    
+    def run(self, config_file_entered = None, log_file_entered = None):
+        
+        platform = sys.platform
+        if sys.platform == 'win32':
+            # TODO: Check what x64 returns
+            log_file = 'pyliteco.log'
+            config_file = 'pyliteco.json'
+        elif platform == 'linux2':
+            # Definitely raspbian, maybe others
+            log_file = '/var/log/pyliteco.log'
+            config_file = '/etc/pyliteco.json'
+        else:
+            # Catch all the rest and store locally
+            log_file = 'pyliteco.log'
+            config_file = 'pyliteco.json'
+        
+        logging_set_up(level = logging.DEBUG, log_file = log_file)
+        
+        logging.info('Starting up')
+        logging.debug('Running on {}'.format(sys.platform))
+        
+        if config_file_entered is not None:
+            config_file = config_file_entered
+        if log_file_entered is not None:
+            log_file = log_file_entered
+        
+        
+        # Check config definitely exists
         try:
-            del indi_device
-        except:
+            CONFIG = load_config(config_file)
+        except IOError:
+            from example import EXAMPLE_CONFIG_JSON as CONFIG
+            with open(config_file, 'a') as file_:
+                json.dump(CONFIG, file_)    
+        try:
+            # Initialise some variables
+            error_flash = False
+            
+            # And the indicator device
+            indi_device = delcom.DelcomGen2()
+            
+            # Loop until connection
+            while self.is_running():
+                global light_state_config
+                light_state_config = get_light_state_config()
+                logging.info('Loaded light states from server')
+                
+                # Reload config
+                CONFIG = load_config(config_file)
+                logging.debug(CONFIG)
+                
+                # Get ip of echo box
+                ECHO_URL = echoip.get_echo_ip()
+                logging.info('Got echo url {}'.format(ECHO_URL))
+                
+                # Try to connect
+                echo_device = echo.Echo360CaptureDevice(ECHO_URL, CONFIG['user'], CONFIG['pass'])
+                if not echo_device.connection_test.success():
+                    # Failed to connect, will try again
+                    logging.error('Something went wrong connecting. Will try again in 10 seconds')
+                    logging.debug(echo_device.connection_test)
+                    
+                    # Check if currently doing error flash and 
+                    if not error_flash:
+                        get_light_action(light_state_config['error'], indi_device)
+                        error_flash = True
+                    sleep(10)
+                else:
+                    # Connected, so (re)set some more variables
+                    error_flash = False
+                    state = None
+                    
+                    # And loop for status
+                    while self.is_running():
+                        try:
+                            state = check_status(echo_device, indi_device, state)
+                            check_button_status(indi_device, echo_device, state)
+                            sleep(0.5) # For niceness
+                        except IndexError:
+                            logging.exception('Bad message - lost connection')
+                        except KeyboardInterrupt:
+                            raise KeyboardInterrupt
+                        except:
+                            logging.exception('Something went a little wrong. Continuing loop')
+                        
+        except KeyboardInterrupt:
+            # Someone wants to escape!
             pass
-        logging.info('Exiting')
+        except:
+            logging.exception(None)
+            exit(1)
+        finally:
+            # Bit of cleaning up as delcom throws 
+            # some other threads around
+            try:
+                del indi_device
+            except:
+                pass
+            logging.info('Exiting')

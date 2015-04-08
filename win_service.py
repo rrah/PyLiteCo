@@ -22,7 +22,7 @@ import servicemanager
 import socket
 
 
-from pyliteco import main
+import pyliteco
 
 
 class pyliteco_svc (win32serviceutil.ServiceFramework):
@@ -37,13 +37,14 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.hWaitStop)
+        self.thread.stop()
 
     def SvcDoRun(self):
         servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
                               servicemanager.PYS_SERVICE_STARTED,
                               (self._svc_name_,''))
-        main("C:\Program Files (x86)\pyliteco\pyliteco.json", "C:\Program Files (x86)\pyliteco\pyliteco.log")
-
+        self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json", "C:\Program Files (x86)\pyliteco\pyliteco.log")
+        self.thread.start()
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(pyliteco_svc)

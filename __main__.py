@@ -21,13 +21,16 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from pyliteco import main
+import pyliteco
+
+from time import sleep
 
 if __name__ == '__main__':
     
     import argparse
     
     parser = argparse.ArgumentParser("Start the pyliteco program")
-    parser.add_argument('-c', dest = 'config_file_entered', default = None, metavar = 'Config file')
-    parser.add_argument('-l', dest = 'log_file_entered', default = None, metavar = 'Log file')
-    main(**vars(parser.parse_args()))
+    parser.add_argument('-c', dest = 'config_file', default = None, metavar = 'Config file')
+    parser.add_argument('-l', dest = 'log_file', default = None, metavar = 'Log file')
+    thread = pyliteco.Main_Thread(**vars(parser.parse_args()))
+    thread.start()
