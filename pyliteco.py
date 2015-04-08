@@ -237,13 +237,17 @@ class Main_Thread():
                         try:
                             state = check_status(echo_device, indi_device, state)
                             check_button_status(indi_device, echo_device, state)
-                            sleep(0.5) # For niceness
                         except IndexError:
                             logging.exception('Bad message - lost connection')
                         except KeyboardInterrupt:
                             raise KeyboardInterrupt
+                        except USBError:
+                            logging.error('USB device malfunctioned')
+                            break
                         except:
                             logging.exception('Something went a little wrong. Continuing loop')
+                        finally:
+                            sleep(0.5) # Stop the thrashing
                         
         except KeyboardInterrupt:
             # Someone wants to escape!
