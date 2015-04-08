@@ -42,7 +42,8 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
                               servicemanager.PYS_SERVICE_STARTED,
                               (self._svc_name_,''))
-        main()
+        main("C:\Program Files (x86)\pyliteco\pyliteco.json", "C:\Program Files (x86)\pyliteco\pyliteco.log")
+
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(pyliteco_svc)
