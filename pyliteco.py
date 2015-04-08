@@ -243,11 +243,10 @@ class Main_Thread():
                             raise KeyboardInterrupt
                         except USBError:
                             logging.error('USB device malfunctioned')
-                            break
                         except:
                             logging.exception('Something went a little wrong. Continuing loop')
                         finally:
-                            sleep(0.5) # Stop the thrashing
+                            sleep(1) # Stop the thrashing
                         
         except KeyboardInterrupt:
             # Someone wants to escape!
