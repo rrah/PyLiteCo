@@ -31,7 +31,8 @@ import os
 from time import sleep
 import threading
 import logging.handlers
-import pywintypes
+if sys.platform == 'win32':
+    import pywintypes
 
 
 # Local modules
