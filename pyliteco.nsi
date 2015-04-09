@@ -37,7 +37,7 @@ Section "install"
 	# Do driver
 	SetOutPath $INSTDIR\pylightco-driver
 	File /r "pylightco-driver\"
-	ExecWait "dpinst64.exe /s"
+	ExecWait "dpinst64.exe /sw"
 
 	# And main service
 	SetOutPath $INSTDIR
