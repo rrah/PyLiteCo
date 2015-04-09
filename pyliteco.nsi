@@ -24,4 +24,7 @@ Section
 	SimpleSC::InstallService "pyliteco" "PyLiteCo" 16 2 "$INSTDIR\$0"
 	SimpleSC::StartService "pyliteco" '' 15
 
+	# Readme
+	File "README.md"
+
 SectionEnd
