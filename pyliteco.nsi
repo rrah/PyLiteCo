@@ -19,8 +19,9 @@ Section
 
 	# And main service
 	SetOutPath $INSTDIR
+	StrCpy $0 "pyliteco-service.exe"
 	File "pyliteco-service.exe"
-	ExecWait "pyliteco-service.exe install"
-	ExecWait "pyliteco-service.exe start"
+	SimpleSC::InstallService "pyliteco" "PyLiteCo" 16 2 "$INSTDIR\$0"
+	SimpleSC::StartService "pyliteco" '' 15
 
 SectionEnd
