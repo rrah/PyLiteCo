@@ -70,7 +70,10 @@ class DelcomGen2(object):
             self.device.detach_kernel_driver(0)
         except:
             pass
-        self.device.set_configuration()
+        try:
+            self.device.set_configuration()
+        except AttributeError:
+            raise USBError('Device not connected')
         
         self._force_off()
         
