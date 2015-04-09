@@ -1,21 +1,43 @@
+
+Name "pyliteco"
 Outfile "pyliteco-setup.exe"
 
 InstallDir "C:\Program Files (x86)\pyliteco"
 
-Section
+
+RequestExecutionLevel admin
+
+
+SilentInstall silent
+SilentUninstall silent
+
+
+!macro VerifyUserIsAdmin
+UserInfo::GetAccountType
+pop $0
+${If} $0 != "admin" ;Require admin rights on NT4+
+        messageBox mb_iconstop "Administrator rights required!"
+        setErrorLevel 740 ;ERROR_ELEVATION_REQUIRED
+        quit
+${EndIf}
+!macroend
+
+
+!include LogicLib.nsh
+
+
+Section "install"
+
+	!insertmacro VerifyUserIsAdmin
 
 	SetOutPath $INSTDIR
 
-	# Check user is admin
-	UserInfo::getAccountType
-	Pop $0
-	StrCmp $0 "Admin" +2
-	Return
+	writeUninstaller "$INSTDIR\uninstall.exe"
 
 	# Do driver
 	SetOutPath $INSTDIR\pylightco-driver
 	File /r "pylightco-driver\"
-	ExecWait "dpinst64.exe"
+	ExecWait "dpinst64.exe /s"
 
 	# And main service
 	SetOutPath $INSTDIR
@@ -26,5 +48,25 @@ Section
 
 	# Readme
 	File "README.md"
+
+SectionEnd
+
+Section "uninstall"
+
+	!insertmacro VerifyUserIsAdmin
+
+	# Stop and remove service
+	SimpleSC::StopService "pyliteco" '' 15
+	SimpleSC::RemoveService "pyliteco"
+
+	# remove files
+	rmDir /r "$INSTDIR\pylightco-driver\"
+	delete "$INSTDIR\pyliteco.json"
+	delete "$INSTDIR\pyliteco-service.exe"
+	delete "$INSTDIR\README.md"
+
+	delete "$INSTDIR\uninstall.exe"
+
+	rmDir $INSTDIR
 
 SectionEnd
