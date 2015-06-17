@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-"""
-Module for delcom status lights.
+"""Module for delcom status lights.
 
 Author: Robert Walker <rw776@york.ac.uk>
 
@@ -32,8 +31,11 @@ from time import sleep
 import usb
 
 PIN_GREEN   = 0b00000001
+"""Byte value for green pin"""
 PIN_YELLOW  = 0b00000010
+"""Byte value for yellow pin"""
 PIN_RED     = 0b00000100
+"""Byte value for red pin"""
 
 class DelcomGen2(object):
     '''
@@ -50,6 +52,7 @@ class DelcomGen2(object):
                                 'red': '\x02\xFF',
                                 'orange': '\x03\xFF', 
                                 'off': '\x00\xFF'}
+    """Dict matching colour to byte-values."""
     _colour_pins = { 'green'     : 1,
                     'yellow'    : 4,
                     'red'       : 2
@@ -96,6 +99,13 @@ class DelcomGen2(object):
 
     def flashing_start(self, flash_speed = 1, colours = 'red'):
         
+        """Start the LED's flashing.
+        
+        Keyword arguements:
+            flash_speed (int): Seconds to stay in each state.
+                Floored to 0.01 and ceilinged to 2.55
+        """
+        
         # Get the flash speed in the right range
         if flash_speed > 2.55:
             flash_speed = 2.55
@@ -121,9 +131,10 @@ class DelcomGen2(object):
         
     def flashing_stop(self):
         
-
-        # Check if a pin is actually flashing, and if so
-        # turn it off and turn off flashing
+        """Check if a pin is actually flashing, and if so
+        turn it off and turn off flashing
+        """
+        
         if self._flashing_pin is not None:
             self.set_light('off')
             self._write_data(self._make_packet(101, 20, 
@@ -136,10 +147,17 @@ class DelcomGen2(object):
 
     def set_brightness(self, brightness):
         
+        """Change brightness of LED's.
+        
+        Arguements:
+            brightness (int): Brightness value between 0 and 100.
+        """
+        
         self._set_pwr(brightness)
 
     def _set_pwr(self, pwr):
         
+        pwr = int(pwr)
         if pwr > 100:
             pwr = 100
         elif pwr < 0:
@@ -154,8 +172,12 @@ class DelcomGen2(object):
 
     def read_switch(self):
     
+        """See if the button has been pressed.
+        
+        Return: 
+            Number of presses
+            True if pressed False otherwise.
         """
-        See if the button has been pressed or not"""
        
         presses = 0
         counter_data = []
@@ -180,8 +202,11 @@ class DelcomGen2(object):
         
     def has_been_pressed(self):
         
+        """Check to see if the button has been pressed.
+        
+        Return:
+            True if button has been pressed, else False.
         """
-        Check to see if the button has been pressed."""
         
         self.read_switch()
         been_pressed = self._been_pressed
@@ -201,6 +226,12 @@ class DelcomGen2(object):
                                     
     def read(self):
         
+        """Straight-up read the device buffer.
+        
+        Return:
+            Byte-array of data.
+        """
+        
         return self._read_data(0x0008)
 
 
@@ -210,8 +241,17 @@ class DelcomGen2(object):
     
     def _set_light(self, colour):
         
+        """Change the colour of the light in the indicator.
+        
+        Arguements:
+            colour (string): Colour to set the LED's to.
+            
+        Returns:
+            None
+            
+        Raises:
+            Exception: Colour isn't allowed by device.
         """
-        Change the colour of the light in the indicator"""
     
         # Check it's a colour we can deal with
         if colour not in self.allowed_colours:
@@ -227,41 +267,55 @@ class DelcomGen2(object):
         
         self._current_colour = colour
         
-    def set_light(self, *args, **kwargs):
+    def set_light(self, colour):
         
+        """Check if flashing and stop flashing, then set colour.
+        
+        Arguements:
+            colour (string): Colour to set the LED's to.
+            
+        Returns:
+            Does not return
         """
-        Check if flashing and stop flashing"""
         
         if hasattr(self, '_flash_thread'):
             self.flashing_stop()
-        self._set_light(*args, **kwargs)
+        self._set_light(colour)
 
         
     def set_light_red(self):
+        
+        """Set the LED's to red."""
         
         return self.set_light('red')
         
     def set_light_yellow(self):
         
+        """Set the LED's to yellow."""
+        
         return self.set_light('yellow')
         
     def set_light_blue(self):
+        
+        """Set the LED's to blue."""
         
         return self.set_light('blue')
         
     def set_light_green(self):
         
+        """Set the LED's to green."""
+        
         return self.set_light('green')
 
     def set_light_off(self):
+        
+        """Turn off the LED's."""
 
         return self.set_light('off')
         
     def __del__(self):
         
-        """
-        Stop any flashing and set the light to off at
-        destruction"""
+        """Stop any flashing and set the light to off at destruction."""
         
         self.flashing_stop()
         self.set_light_off()
