@@ -35,9 +35,9 @@ Section "install"
 	writeUninstaller "$INSTDIR\uninstall.exe"
 
 	# Do driver
-	#SetOutPath $INSTDIR\pylightco-driver
-	#File /r "pylightco-driver\"
-	#ExecWait "dpinst64.exe /sw"
+	SetOutPath $INSTDIR\pylightco-driver
+	File /r "pylightco-driver\"
+	ExecWait "dpinst64.exe /sw"
 
 	# And main service
 	SetOutPath $INSTDIR
