@@ -118,7 +118,9 @@ def check_status(echo_device, indi_device, state_old = None):
     """
     Connect to echo box and check state"""
     
-    state = [thing.split('=')[1] for thing in echo_device.capture_status_str().split(';') if 'State' in thing][0]
+    state_string = echo_device.capture_status_str()
+    logging.debug(state_string)
+    state = [thing.split('=')[1] for thing in state_string.split(';') if 'State' in thing][0]
     logging.debug('Echo box in state {}'.format(state))
     if state_old == state: # Avoid unneccesary changes
         return state
@@ -180,7 +182,7 @@ class Main_Thread():
             log_file = 'pyliteco.log'
             config_file = 'pyliteco.json'
         
-        logging_set_up(level = logging.INFO, log_file = log_file)
+        logging_set_up(level = logging.DEBUG, log_file = log_file)
         
         logging.info('Starting up')
         logging.debug('Running on {}'.format(sys.platform))
@@ -198,6 +200,10 @@ class Main_Thread():
             from example import EXAMPLE_CONFIG_JSON as CONFIG
             with open(config_file, 'a') as file_:
                 json.dump(CONFIG, file_)    
+        
+        if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
+            logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+
         try:
             # Initialise some variables
             error_flash = False
