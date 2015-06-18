@@ -18,16 +18,21 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-class Dummy(object):
+class Device(object):
     
     """Pretends to be an indicator so stuff can be tested."""
     
     def _report(self, msg):
         print msg
         
-    def flashing_start(self):
+    def flashing_start(self, colours, flash_speed):
         
-        """Report the start of flashing."""
+        """Report the start of flashing.
+        
+        Arguements:
+            colours: Doesn't matter, ignored.
+            flash_speed: Doesn't matter, ignored.
+        """
         
         self._report('Starting flashing')
         
@@ -37,8 +42,17 @@ class Dummy(object):
         
         self._report('Stopping flashing')
         
-    def set_light(self, *args, **kwargs):
+    def set_light(self, colour):
         
         """Report the setting of a colour."""
         
-        self._report('Set to a colour')
+        self._report('Set to {}'.format(colour))
+        
+    def has_been_pressed(self):
+        
+        """Never gonna give you UP, never gonna let you DOWN.
+        
+        Return:
+            False. Always."""
+        
+        return False

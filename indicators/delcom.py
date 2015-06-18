@@ -37,7 +37,7 @@ PIN_YELLOW  = 0b00000010
 PIN_RED     = 0b00000100
 """Byte value for red pin"""
 
-class DelcomGen2(object):
+class Device(object):
     '''
     Class for talking to Delcom Products generation 2 USB device 
     Modified from http://permalink.gmane.org/gmane.comp.python.pyusb.user/91

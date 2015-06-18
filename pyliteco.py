@@ -1,5 +1,4 @@
-"""
-Looks at echo box and changes light depending on state
+"""Looks at echo box and changes light depending on state
 
 Author: Robert Walker <rw776@york.ac.uk>
 
@@ -25,20 +24,24 @@ from encodings import hex_codec, utf_8_sig, utf_8, ascii
 
 # Built-in modules
 import json
-import sys
 import logging
-import os
-from time import sleep
-import threading
 import logging.handlers
+import os
+import sys
+import threading
 if sys.platform == 'win32':
     import pywintypes
+from time import sleep
 
 
 # Local modules
 import echoip
 import echo360.capture_device as echo
-import indicators.delcom as delcom
+import indicators
+
+
+CONFIG_URL = 'http://yorkie.york.ac.uk/echolight.php'
+"""Base URL for gettting config files."""
 
 
 def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
@@ -79,7 +82,7 @@ def get_light_state_config():
     import urllib2
     
     try:
-        return json.loads(urllib2.urlopen("http://yorkie/echolight.php?config").read())
+        return json.loads(urllib2.urlopen(CONFIG_URL + "?config").read())
     except ValueError:
         logging.error('Could not get configuration from server')
         sys.exit(1)
@@ -200,7 +203,7 @@ class Main_Thread():
             error_flash = False
             
             # And the indicator device
-            indi_device = delcom.DelcomGen2()
+            indi_device = indicators.get_device(CONFIG['indicator'])()
             
             # Loop until connection
             while self.is_running():
@@ -218,7 +221,8 @@ class Main_Thread():
                 
                 # Try to connect
                 echo_device = echo.Echo360CaptureDevice(ECHO_URL, CONFIG['user'], CONFIG['pass'])
-                if not echo_device.connection_test.success():
+                #if not echo_device.connection_test.success():
+                if False:
                     # Failed to connect, will try again
                     logging.error('Something went wrong connecting. Will try again in 10 seconds')
                     logging.debug(echo_device.connection_test)
@@ -242,8 +246,8 @@ class Main_Thread():
                             logging.exception('Bad message - lost connection')
                         except KeyboardInterrupt:
                             raise KeyboardInterrupt
-                        except USBError:
-                            logging.error('USB device malfunctioned')
+                        #except USBError:
+                            #logging.error('USB device malfunctioned')
                         except:
                             logging.exception('Something went a little wrong. Continuing loop')
                         finally:
