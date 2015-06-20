@@ -5,3 +5,5 @@ pyliteco.json
 pyliteco.log
 build/
 dist/
+*.spec
+/pyliteco-setup.exe
