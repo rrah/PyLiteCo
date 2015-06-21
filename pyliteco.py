@@ -1,5 +1,4 @@
-"""
-Looks at echo box and changes light depending on state
+"""Looks at echo box and changes light depending on state
 
 Author: Robert Walker <rw776@york.ac.uk>
 
@@ -25,20 +24,24 @@ from encodings import hex_codec, utf_8_sig, utf_8, ascii
 
 # Built-in modules
 import json
-import sys
 import logging
-import os
-from time import sleep
-import threading
 import logging.handlers
+import os
+import sys
+import threading
 if sys.platform == 'win32':
     import pywintypes
+from time import sleep
 
 
 # Local modules
 import echoip
 import echo360.capture_device as echo
-import indicators.delcom as delcom
+import indicators
+
+
+CONFIG_URL = 'http://yorkie.york.ac.uk/echolight.php'
+"""Base URL for gettting config files."""
 
 
 def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
@@ -79,7 +82,7 @@ def get_light_state_config():
     import urllib2
     
     try:
-        return json.loads(urllib2.urlopen("http://yorkie/echolight.php?config").read())
+        return json.loads(urllib2.urlopen(CONFIG_URL + "?config").read())
     except ValueError:
         logging.error('Could not get configuration from server')
         sys.exit(1)
@@ -115,7 +118,9 @@ def check_status(echo_device, indi_device, state_old = None):
     """
     Connect to echo box and check state"""
     
-    state = [thing.split('=')[1] for thing in echo_device.capture_status_str().split(';') if 'State' in thing][0]
+    state_string = echo_device.capture_status_str()
+    logging.debug(state_string)
+    state = [thing.split('=')[1] for thing in state_string.split(';') if 'State' in thing][0]
     logging.debug('Echo box in state {}'.format(state))
     if state_old == state: # Avoid unneccesary changes
         return state
@@ -177,7 +182,7 @@ class Main_Thread():
             log_file = 'pyliteco.log'
             config_file = 'pyliteco.json'
         
-        logging_set_up(level = logging.INFO, log_file = log_file)
+        logging_set_up(level = logging.DEBUG, log_file = log_file)
         
         logging.info('Starting up')
         logging.debug('Running on {}'.format(sys.platform))
@@ -195,12 +200,16 @@ class Main_Thread():
             from example import EXAMPLE_CONFIG_JSON as CONFIG
             with open(config_file, 'a') as file_:
                 json.dump(CONFIG, file_)    
+        
+        if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
+            logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+
         try:
             # Initialise some variables
             error_flash = False
             
             # And the indicator device
-            indi_device = delcom.DelcomGen2()
+            indi_device = indicators.get_device(CONFIG['indicator'])()
             
             # Loop until connection
             while self.is_running():
@@ -218,7 +227,8 @@ class Main_Thread():
                 
                 # Try to connect
                 echo_device = echo.Echo360CaptureDevice(ECHO_URL, CONFIG['user'], CONFIG['pass'])
-                if not echo_device.connection_test.success():
+                #if not echo_device.connection_test.success():
+                if False:
                     # Failed to connect, will try again
                     logging.error('Something went wrong connecting. Will try again in 10 seconds')
                     logging.debug(echo_device.connection_test)
@@ -242,8 +252,8 @@ class Main_Thread():
                             logging.exception('Bad message - lost connection')
                         except KeyboardInterrupt:
                             raise KeyboardInterrupt
-                        except USBError:
-                            logging.error('USB device malfunctioned')
+                        #except USBError:
+                            #logging.error('USB device malfunctioned')
                         except:
                             logging.exception('Something went a little wrong. Continuing loop')
                         finally:

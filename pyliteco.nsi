@@ -42,7 +42,7 @@ Section "install"
 	# And main service
 	SetOutPath $INSTDIR
 	StrCpy $0 "pyliteco-service.exe"
-	File "pyliteco-service.exe"
+	File "/oname=$0" "dist\win_service.exe"
 	SimpleSC::InstallService "pyliteco" "PyLiteCo" 16 2 "$INSTDIR\$0"
 	SimpleSC::StartService "pyliteco" '' 15
 

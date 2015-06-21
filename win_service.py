@@ -15,12 +15,12 @@ Copyright (C) 2015 Robert Walker
 """
 
 import pythoncom
+import servicemanager
+import socket
+import sys
 import win32serviceutil
 import win32service
 import win32event
-import servicemanager
-import socket
-
 
 import pyliteco
 
@@ -47,4 +47,9 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         self.thread.start()
 
 if __name__ == '__main__':
-    win32serviceutil.HandleCommandLine(pyliteco_svc)
+    if len(sys.argv) == 1:
+        servicemanager.Initialize()
+        servicemanager.PrepareToHostSingle(pyliteco_svc)
+        servicemanager.StartServiceCtrlDispatcher()
+    else:
+        win32serviceutil.HandleCommandLine(pyliteco_svc)
