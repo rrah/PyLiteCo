@@ -46,8 +46,15 @@ CONFIG_URL = 'http://yorkie.york.ac.uk/echolight.php'
 
 def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
     
+    """Set up logging so it prints to console.
+    
+    Arguements:
+        level: Logging level, as defined within the logging module.
+        log_file (string): File to dump logs to.
+    
+    Returns:
+        None
     """
-    Set up logging so it prints to console"""
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.basicConfig(filename=log_file, level = level, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')    
@@ -67,31 +74,40 @@ def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
 
 def load_config(file_ = 'config.json'):
     
+    """Get the config from the config file.
+    
+    Arguements:
+        file_ (string): Name of the file to load.
+        
+    Returns:
+        Dict with configuration options.
     """
-    Try to load the given JSON config file and return data structure"""
     
     try:
         with open(file_) as CONFIG_FILE:
             return json.load(CONFIG_FILE)
+    except IOError:
+        from example import EXAMPLE_CONFIG_JSON as CONFIG
+        with open(config_file, 'a') as file_:
+            json.dump(CONFIG, file_)
     except ValueError:
-        logging.exception('Bad config file')    
+        logging.exception('Bad config file')
         
-    
-def get_light_state_config():
-    
-    import urllib2
-    
-    try:
-        return json.loads(urllib2.urlopen(CONFIG_URL + "?config").read())
-    except ValueError:
-        logging.error('Could not get configuration from server')
-        sys.exit(1)
+    if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
+        logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
 
 
 def get_light_action(config_json, device):
     
+    """Return the method to set the light to what the config file wants.
+    
+    Arguements:
+        config_json (dict): Dictionary containing information for the required light state.
+        device (indicators.Device): LED device to set.
+        
+    Returns:
+        Return code of device.set_light method.
     """
-    Return the method to set the light to what the config file wants"""
     
     # Stop any flashing
     device.flashing_stop()
@@ -113,7 +129,7 @@ def get_light_action(config_json, device):
         raise
         
     
-def check_status(echo_device, indi_device, state_old = None):
+def check_status(echo_device, indi_device, config, state_old = None):
     
     """
     Connect to echo box and check state"""
@@ -127,7 +143,7 @@ def check_status(echo_device, indi_device, state_old = None):
     logging.info('Change of state from {} to {}'.format(state_old, state))
     if state in ['inactive', 'active', 'waiting', 'complete', 'paused']:
         try:
-            get_light_action(light_state_config[state], indi_device)
+            get_light_action(config[state], indi_device)
         except KeyError:
             logging.exception('Bad light state config')
     else:
@@ -148,10 +164,12 @@ def check_button_status(indi_device, echo_device, state = None):
             echo_device.capture_record()
 
 class Main_Thread():
+    
+    """Thing that does the main running."""
+    
     running = False
     
     def __init__(self, config_file, log_file):
-        ##threading.Thread.__init__(self)
         self.arguments = {"config_file_entered":config_file,
                           "log_file_entered":log_file}
         
@@ -193,16 +211,8 @@ class Main_Thread():
             log_file = log_file_entered
         
         
-        # Check config definitely exists
-        try:
-            CONFIG = load_config(config_file)
-        except IOError:
-            from example import EXAMPLE_CONFIG_JSON as CONFIG
-            with open(config_file, 'a') as file_:
-                json.dump(CONFIG, file_)    
-        
-        if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-            logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+        # Loading of the config
+        CONFIG = load_config(config_file)
 
         try:
             # Initialise some variables
@@ -212,30 +222,25 @@ class Main_Thread():
             indi_device = indicators.get_device(CONFIG['indicator'])()
             
             # Loop until connection
-            while self.is_running():
-                global light_state_config
-                light_state_config = get_light_state_config()
-                logging.info('Loaded light states from server')
-                
+            while self.is_running():              
                 # Reload config
                 CONFIG = load_config(config_file)
+                CONFIG.update(echoip.get_echo_config())
                 logging.debug(CONFIG)
                 
-                # Get ip of echo box
-                ECHO_URL = echoip.get_echo_ip()
-                logging.info('Got echo url {}'.format(ECHO_URL))
+                # Log echo ip
+                logging.info('Got echo url {}'.format(CONFIG['ip']))
                 
                 # Try to connect
-                echo_device = echo.Echo360CaptureDevice(ECHO_URL, CONFIG['user'], CONFIG['pass'])
-                #if not echo_device.connection_test.success():
-                if False:
+                echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
+                if not echo_device.connection_test.success():
                     # Failed to connect, will try again
                     logging.error('Something went wrong connecting. Will try again in 10 seconds')
                     logging.debug(echo_device.connection_test)
                     
                     # Check if currently doing error flash and 
                     if not error_flash:
-                        get_light_action(light_state_config['error'], indi_device)
+                        get_light_action(CONFIG['error'], indi_device)
                         error_flash = True
                     sleep(10)
                 else:
@@ -246,14 +251,12 @@ class Main_Thread():
                     # And loop for status
                     while self.is_running():
                         try:
-                            state = check_status(echo_device, indi_device, state)
+                            state = check_status(echo_device, indi_device, CONFIG, state)
                             check_button_status(indi_device, echo_device, state)
                         except IndexError:
                             logging.exception('Bad message - lost connection')
                         except KeyboardInterrupt:
                             raise KeyboardInterrupt
-                        #except USBError:
-                            #logging.error('USB device malfunctioned')
                         except:
                             logging.exception('Something went a little wrong. Continuing loop')
                         finally:

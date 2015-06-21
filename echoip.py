@@ -21,10 +21,30 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import json
+import logging
 import urllib2
+import sys
 
-SERVER = 'http://yorkie/echolight.php'
+logging.getLogger()
+
+SERVER = 'yorkie.york.ac.uk/echolight.php'
+PROTOCOL = 'http'
 
 
 def get_echo_ip():
-    return 'https://' + urllib2.urlopen(SERVER).read()
+    return urllib2.urlopen(PROTOCOL + '://' + SERVER).read()
+
+def get_light_state_config():
+    
+    try:
+        return json.loads(urllib2.urlopen(PROTOCOL + '://' + SERVER + "?config").read())
+    except ValueError:
+        logging.error('Could not get configuration from server')
+        sys.exit(1)
+        
+def get_echo_config():
+    
+    config = get_light_state_config()
+    config.update({'ip': 'https://' + get_echo_ip()})
+    return config
