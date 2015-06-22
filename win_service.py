@@ -1,6 +1,7 @@
-"""
-Set up pyliteco to run as a Windows service
-Author: Robert Walker <rw776@york.ac.uk>
+"""Set up pyliteco to run as a Windows service.
+
+Author: Robert Walker <rrah99@gmail.com>
+
 Copyright (C) 2015 Robert Walker
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

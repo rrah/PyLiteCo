@@ -2,7 +2,7 @@
 
 """Module for delcom status lights.
 
-Author: Robert Walker <rw776@york.ac.uk>
+Author: Robert Walker <rrah99@gmail.com>
 
 Copyright (C) 2015 Robert Walker
 

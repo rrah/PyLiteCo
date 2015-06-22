@@ -1,6 +1,6 @@
 """Dummy indicator that logs stuff when things happen.
 
-Author: Robert Walker <rw776@york.ac.uk>
+Author: Robert Walker <rrah99@gmail.com>
 
 Copyright (C) 2015 Robert Walker
 
