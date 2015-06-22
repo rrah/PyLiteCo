@@ -88,7 +88,7 @@ def load_config(file_ = 'config.json'):
             return json.load(CONFIG_FILE)
     except IOError:
         from example import EXAMPLE_CONFIG_JSON as CONFIG
-        with open(config_file, 'a') as file_:
+        with open(file_, 'a') as file_:
             json.dump(CONFIG, file_)
     except ValueError:
         logging.exception('Bad config file')
