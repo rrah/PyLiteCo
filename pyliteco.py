@@ -1,6 +1,6 @@
 """Looks at echo box and changes light depending on state
 
-Author: Robert Walker <rw776@york.ac.uk>
+Author: Robert Walker <rrah99@gmail.com>
 
 Copyright (C) 2015 Robert Walker
 
@@ -188,7 +188,6 @@ class Main_Thread():
         
         platform = sys.platform
         if sys.platform == 'win32':
-            # TODO: Check what x64 returns
             log_file = 'pyliteco.log'
             config_file = 'pyliteco.json'
         elif platform == 'linux2':
