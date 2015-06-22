@@ -224,10 +224,10 @@ class Main_Thread():
             while self.is_running():              
                 # Reload config
                 CONFIG = load_config(config_file)
-                try:
-                    CONFIG.update(echoip.get_echo_config())
-                except URLError:
-                    pass
+                #try:
+                CONFIG.update(echoip.get_echo_config())
+                #except URLError:
+                    #pass
                 logging.debug(CONFIG)
                 
                 # Log echo ip
