@@ -72,7 +72,6 @@ Section "uninstall"
 	SimpleSC::RemoveService "pyliteco"
 
 	# remove files
-	rmDir /r "$INSTDIR\pylightco-driver\"
 	delete "$INSTDIR\pyliteco.json"
 	delete "$INSTDIR\pyliteco-service.exe"
 	delete "$INSTDIR\README.md"
