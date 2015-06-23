@@ -48,7 +48,7 @@ class Device(object):
         
         self._report('Set to {}'.format(colour))
         
-    def has_been_pressed(self):
+    def read_switch(self):
         
         """Never gonna give you UP, never gonna let you DOWN.
         
