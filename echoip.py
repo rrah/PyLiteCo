@@ -31,20 +31,45 @@ logging.getLogger()
 SERVER = 'yorkie.york.ac.uk/echolight.php'
 PROTOCOL = 'http'
 
+def _get_file(url):
+    
+    """Wrapper to grab a file and raise an exception if the file
+    is not valid.
+    
+    Arguements:
+        url (string): URL to get the file from.
+        
+    Returns:
+        file_ (string): Body of the file.
+    """
+    
+    file_ = urllib2.urlopen(url).read()
+    if file_ == '404' or file_ == '':
+        raise EchoipError('Server returned 404')
+    else:
+        return file_
+
 
 def get_echo_ip():
-    return urllib2.urlopen(PROTOCOL + '://' + SERVER).read()
+    
+    """Get the IP this indicator should be looking at.
+    
+    Returns:
+        ip (string): String containing the IP
+    """
+    
+    return _get_file(PROTOCOL + '://' + SERVER)
 
 def get_light_state_config():
     
-    try:
-        return json.loads(urllib2.urlopen(PROTOCOL + '://' + SERVER + "?config").read())
-    except ValueError:
-        logging.error('Could not get configuration from server')
-        sys.exit(1)
+    return json.loads(_get_file(PROTOCOL + '://' + SERVER + "?config"))
         
 def get_echo_config():
     
     config = get_light_state_config()
     config.update({'ip': 'https://' + get_echo_ip()})
     return config
+
+class EchoipError(Exception):
+    
+    pass

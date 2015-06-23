@@ -20,43 +20,32 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# Builtin imports
-import threading
-import sys
+# Imports
 import logging
-from time import sleep
+import pywinusb.hid as hid
+from pywinusb.hid import HIDError
 
-
-# Does communication to usb. Surprisingly
-import usb
-
-PIN_GREEN   = 0b00000001
-"""Byte value for green pin"""
-PIN_YELLOW  = 0b00000010
-"""Byte value for yellow pin"""
-PIN_RED     = 0b00000100
-"""Byte value for red pin"""
 
 class Device(object):
-    '''
-    Class for talking to Delcom Products generation 2 USB device 
-    Modified from http://permalink.gmane.org/gmane.comp.python.pyusb.user/91
-    '''
+    
+    """Delcom Products generation 2 USB device class."""
 
     # Device Constants
-    VENDOR_ID       = 0x0FC5    #: Delcom Product ID
-    PRODUCT_ID      = 0xB080    #: Delcom Product ID
-    INTERFACE_ID    = 0         #: The interface we use
-    allowed_colours = {'green': '\x01\xFF', 
-                                'yellow': '\x04\xFF', 
-                                'red': '\x02\xFF',
-                                'orange': '\x03\xFF', 
-                                'off': '\x00\xFF'}
+    VENDOR_ID       = 0x0FC5    
+    """Delcom Vendor ID."""
+    PRODUCT_ID      = 0xB080
+    """Delcom Product ID."""
+    allowed_colours = {'green': [0x01, 0xFF], 
+                                'yellow': [0x04, 0xFF], 
+                                'red': [0x02, 0xFF],
+                                'orange': [0x06, 0xFF], 
+                                'off': [0x00, 0xFF]}
     """Dict matching colour to byte-values."""
     _colour_pins = { 'green'     : 1,
                     'yellow'    : 4,
                     'red'       : 2
                     }
+    
 
     def __init__(self):
         '''
@@ -64,26 +53,17 @@ class Device(object):
         
         # Set some default attributes
         self._flashing_pin = None
-        self._pressed = False
         self._current_colour = 'off'
-        self._been_pressed = False
         
-        self.device = usb.core.find(idProduct = self.PRODUCT_ID)
-        try:
-            self.device.detach_kernel_driver(0)
-        except:
-            pass
-        try:
-            self.device.set_configuration()
-        except AttributeError:
-            raise USBError('Device not connected')
+        filter = hid.HidDeviceFilter(vendor_id = self.VENDOR_ID, product_id = self.PRODUCT_ID)
+        self.device = filter.get_devices()[0]
+        
+        self.device.open()
         
         self._force_off()
         
-        
         # Turn on event counter and reset
         self._write_data(self._make_packet(101, 38, 0x01))
-        self._read_data(0x0008)
         
         self.set_brightness(50)
     
@@ -92,7 +72,7 @@ class Device(object):
         """
         Make sure flashing/LEDs are definitely turned off"""
         
-        self._write_data("\x65\x0C\x00\xFF\x00\x00\x00\x00")
+        self._write_data(self._make_packet(101, 0x0c, 0, 0xFF))
         self._write_data(self._make_packet(101, 20, 1))
         self._write_data(self._make_packet(101, 20, 2))
         self._write_data(self._make_packet(101, 20, 4))        
@@ -104,6 +84,9 @@ class Device(object):
         Keyword arguements:
             flash_speed (int): Seconds to stay in each state.
                 Floored to 0.01 and ceilinged to 2.55
+                
+        Returns:
+            None.
         """
         
         # Get the flash speed in the right range
@@ -132,7 +115,7 @@ class Device(object):
     def flashing_stop(self):
         
         """Check if a pin is actually flashing, and if so
-        turn it off and turn off flashing
+        turn it off and turn off flashing.
         """
         
         if self._flashing_pin is not None:
@@ -142,8 +125,7 @@ class Device(object):
 
     def _make_packet(self, maj_cmd, min_cmd, lsb = 0x00, msb = 0x00):
         
-        return bytearray([maj_cmd, min_cmd, lsb, msb, 
-                                            0x00, 0x00, 0x00, 0x00])
+        return [maj_cmd, min_cmd, lsb, msb, 0x00, 0x00, 0x00, 0x00]
 
     def set_brightness(self, brightness):
         
@@ -168,71 +150,41 @@ class Device(object):
         
     def _write_data(self, data):
 
-        self.device.ctrl_transfer(0x21, 0x09, 0x0365, 0x0000, data, 100)
+        for report in self.device.find_feature_reports():
+            if report.report_id == data[0]:
+                report[4278190083L] = data[1:]
+                report.send()
 
     def read_switch(self):
     
         """See if the button has been pressed.
         
         Return: 
-            Number of presses
-            True if pressed False otherwise.
-        """
-       
-        presses = 0
-        counter_data = []
-        pressed_data = []
-        
-        # Sometimes doesn't get a return, so repeat until data is got
-        while len(counter_data) != 8:
-            counter_data = self._read_data(0x0008)
-        while len(pressed_data) != 8:
-            pressed_data = self._read_data(0x0064)
-        
-        counter = int(counter_data[0])
-        self._pressed = not bool(int(pressed_data[0]) % 2)
-        
-        # Count up the number of presses since last read
-        while counter > 0:
-            presses += 1
-            counter -= 1 
-        if presses > 0:
-            self._been_pressed = True
-        return presses, self._pressed
-        
-    def has_been_pressed(self):
-        
-        """Check to see if the button has been pressed.
-        
-        Return:
-            True if button has been pressed, else False.
+            True if pressed, False otherwise.
         """
         
-        self.read_switch()
-        been_pressed = self._been_pressed
+        data = None
+        while not data:
+            try:
+                data = self._read_data(8)
+            except HIDError:
+                pass
+        if data[8:11] == [0, 0, 0]:
+            # Bad data, disregard
+            return False
+        counter = data[0]
         
-        # Reset attribute
-        self._been_pressed = False
-        return been_pressed
-
-    def get_pressed(self):
-        
-        return self._pressed
+        if counter > 0:
+            return True
+        else:
+            return False
 
     def _read_data(self, cmd):
 
-        data = self.device.ctrl_transfer(0xA1, 0x01, cmd, 0x0000, 8, 100)
-        return data
-                                    
-    def read(self):
-        
-        """Straight-up read the device buffer.
-        
-        Return:
-            Byte-array of data.
-        """
-        
-        return self._read_data(0x0008)
+        reports = self.device.find_feature_reports()
+        for report in reports:
+            if report.report_id == cmd:
+                return report.get()
 
 
     def _get_current_colour(self):
@@ -261,9 +213,12 @@ class Device(object):
             return
             
         # Make the call to change the colour
-        msg = "\x65\x0C{}\x00\x00\x00\x00".format(self.allowed_colours[colour])
-        self._write_data("\x65\x0C\x00\xFF\x00\x00\x00\x00")
-        self._write_data(msg)
+        self._write_data(self._make_packet(0x65, 0x0C, 
+                                           self.allowed_colours['off'][0], 
+                                           self.allowed_colours['off'][1]))
+        self._write_data(self._make_packet(0x65, 0x0C, 
+                                           self.allowed_colours[colour][0], 
+                                           self.allowed_colours[colour][1]))
         
         self._current_colour = colour
         
@@ -319,35 +274,8 @@ class Device(object):
         
         self.flashing_stop()
         self.set_light_off()
+        self.device.close()
 
-
-class DeviceDescriptor(object):
-    '''
-    Class for defining the USB device
-    '''
-
-    def __init__(self, vendor_id, product_id, interface_id):
-        '''
-        Constructor
-        '''
-        self.vendor_id = vendor_id
-        self.product_id = product_id
-        self.interface_id = interface_id
-
-    def getDevice(self):
-        '''
-        Return the device corresponding to the device descriptor if it is
-        available on the USB bus.  Otherwise return None.  Note that the
-        returned device has yet to be claimed or opened.
-        '''
-        # Find all the USB busses
-        busses = usb.busses()
-        for bus in busses:
-            for device in bus.devices:
-                if device.idVendor == self.vendor_id and \
-                   device.idProduct == self.product_id:
-                    return device
-        return None
 
 if __name__ == '__main__':
     import os

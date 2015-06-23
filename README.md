@@ -25,4 +25,4 @@ This will run pyliteco as a Windows service, logging to the Event Log, starting 
 <h2> To-do </h2>
  - Document server side
  - Silent install
- ~~- Uninstaller~~
+ - ~~Uninstaller~~

@@ -51,11 +51,6 @@ Section "install"
 
 	writeUninstaller "$INSTDIR\uninstall.exe"
 
-	# Do driver
-	SetOutPath $INSTDIR\pylightco-driver
-	File /r "pylightco-driver\"
-	ExecWait "dpinst64.exe /sw"
-
 	# And main service
 	SetOutPath $INSTDIR
 	StrCpy $0 "pyliteco-service.exe"
@@ -77,7 +72,6 @@ Section "uninstall"
 	SimpleSC::RemoveService "pyliteco"
 
 	# remove files
-	rmDir /r "$INSTDIR\pylightco-driver\"
 	delete "$INSTDIR\pyliteco.json"
 	delete "$INSTDIR\pyliteco-service.exe"
 	delete "$INSTDIR\README.md"

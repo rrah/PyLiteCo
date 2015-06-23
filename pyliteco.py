@@ -18,19 +18,14 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# For freeze
-from encodings import hex_codec, utf_8_sig, utf_8, ascii
-
 
 # Built-in modules
 import json
 import logging
 import logging.handlers
-import os
 import sys
 import threading
-if sys.platform == 'win32':
-    import pywintypes
+import pywintypes
 from time import sleep
 
 
@@ -71,30 +66,6 @@ def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
         root.addHandler(nthandler)
     except pywintypes.error:
         pass
-
-def load_config(file_ = 'config.json'):
-    
-    """Get the config from the config file.
-    
-    Arguements:
-        file_ (string): Name of the file to load.
-        
-    Returns:
-        Dict with configuration options.
-    """
-    
-    try:
-        with open(file_) as CONFIG_FILE:
-            return json.load(CONFIG_FILE)
-    except IOError:
-        from example import EXAMPLE_CONFIG_JSON as CONFIG
-        with open(file_, 'a') as file_:
-            json.dump(CONFIG, file_)
-    except ValueError:
-        logging.exception('Bad config file')
-        
-    if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-        logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
 
 
 def get_light_action(config_json, device):
@@ -154,7 +125,7 @@ def check_status(echo_device, indi_device, config, state_old = None):
 
 def check_button_status(indi_device, echo_device, state = None):
     
-    if indi_device.has_been_pressed():
+    if indi_device.read_switch():
         logging.debug('Button pressed while in state {}'.format(state))
         if state == 'active':
             # recording, so pause
@@ -162,6 +133,10 @@ def check_button_status(indi_device, echo_device, state = None):
         elif state == 'paused':
             # paused, so restart
             echo_device.capture_record()
+            
+class EchoError(Exception):
+    
+    pass
 
 class Main_Thread():
     
@@ -179,30 +154,90 @@ class Main_Thread():
         
     def is_running(self):
         
+        """Check whether the thread should be running.
+        
+        Returns:
+            True if running, else false
+        """
+        
         return self.running
     
     def stop(self):
+        
+        """Set attribute so thread stops running.
+        
+        Returns:
+            None
+        """
+        
         self.running = False
+        
+    def load_config(self, file_ = 'config.json', old_config = None):
+    
+        """Get the config from the config file.
+        
+        Arguements:
+            file_ (string): Name of the file to load.
+            old_config (dict): Old config to compare new one to.
+            
+        Returns:
+            Dict with configuration options.
+        """
+        
+        try:
+            with open(file_) as CONFIG_FILE:
+                CONFIG = json.load(CONFIG_FILE)
+                CONFIG.update(echoip.get_echo_config())
+                
+                if old_config is not None:
+                    args = {}
+                    for thing in CONFIG.keys():
+                        if cmp(old_config[thing], CONFIG[thing]) != 0:
+                            args[thing] = CONFIG[thing]
+                    if len(args) == 0:
+                        # No changes
+                        return old_config
+                    
+                    # Deal with new indicator
+                    try:
+                        indicator = args['indicator']
+                        del self.indi_device
+                        self.indi_device = indicators.get_device(indicator)()
+                        self.state = None
+                        logging.info('Change indicator type to {}.'.format(indicator))
+                        logging.debug('Reset status to None.')
+                    except KeyError:
+                        # No change to indicator
+                        pass
+                    
+                    # Deal with new echo details
+                    if set(args.keys()).intersection(set(['user', 'pass', 'ip'])):
+                        self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
+                        if not self.echo_device.connection_test.success():
+                            # Failed to connect
+                            logging.error('Something went wrong connecting to echo box.')
+                            logging.debug(self.echo_device.connection_test)
+                            raise EchoError('Unable to connect.')
+                
+                if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
+                    logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+                return CONFIG
+        except IOError:
+            from example import EXAMPLE_CONFIG_JSON as CONFIG
+            with open(file_, 'a') as open_file:
+                json.dump(CONFIG, open_file)
+            return self.load_config(file_)
+        except ValueError:
+            logging.exception('Bad config file')
     
     def run(self, config_file_entered = None, log_file_entered = None):
         
-        platform = sys.platform
-        if sys.platform == 'win32':
-            log_file = 'pyliteco.log'
-            config_file = 'pyliteco.json'
-        elif platform == 'linux2':
-            # Definitely raspbian, maybe others
-            log_file = '/var/log/pyliteco.log'
-            config_file = '/etc/pyliteco.json'
-        else:
-            # Catch all the rest and store locally
-            log_file = 'pyliteco.log'
-            config_file = 'pyliteco.json'
+        log_file = 'pyliteco.log'
+        config_file = 'pyliteco.json'
         
         logging_set_up(level = logging.DEBUG, log_file = log_file)
         
         logging.info('Starting up')
-        logging.debug('Running on {}'.format(sys.platform))
         
         if config_file_entered is not None:
             config_file = config_file_entered
@@ -211,50 +246,59 @@ class Main_Thread():
         
         
         # Loading of the config
-        CONFIG = load_config(config_file)
+        CONFIG = self.load_config(config_file)
 
         try:
             # Initialise some variables
             error_flash = False
             
             # And the indicator device
-            indi_device = indicators.get_device(CONFIG['indicator'])()
+            self.indi_device = indicators.get_device(CONFIG['indicator'])()
             
             # Loop until connection
-            while self.is_running():              
+            while self.is_running():
                 # Reload config
-                CONFIG = load_config(config_file)
                 try:
-                    CONFIG.update(echoip.get_echo_config())
-                except URLError:
-                    pass
+                    CONFIG = self.load_config(config_file, CONFIG)
+                except EchoError:
+                    sleep(60)
+                    continue
                 logging.debug(CONFIG)
                 
                 # Log echo ip
                 logging.info('Got echo url {}'.format(CONFIG['ip']))
                 
                 # Try to connect
-                echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
-                if not echo_device.connection_test.success():
+                self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
+                if not self.echo_device.connection_test.success():
                     # Failed to connect, will try again
-                    logging.error('Something went wrong connecting. Will try again in 10 seconds')
-                    logging.debug(echo_device.connection_test)
+                    logging.error('Something went wrong connecting to echo box. Will try again in a minute')
+                    logging.debug(self.echo_device.connection_test)
                     
                     # Check if currently doing error flash and 
                     if not error_flash:
-                        get_light_action(CONFIG['error'], indi_device)
+                        get_light_action(CONFIG['error'], self.indi_device)
                         error_flash = True
-                    sleep(10)
+                    sleep(60)
                 else:
                     # Connected, so (re)set some more variables
                     error_flash = False
-                    state = None
+                    self.state = None
+                    count = 0
                     
                     # And loop for status
                     while self.is_running():
                         try:
-                            state = check_status(echo_device, indi_device, CONFIG, state)
-                            check_button_status(indi_device, echo_device, state)
+                            if count < 60:
+                                count += 1
+                            else:
+                                logging.debug('Reloading config')
+                                CONFIG = self.load_config(config_file, CONFIG)
+                                count = 0
+                            self.state = check_status(self.echo_device, self.indi_device, CONFIG, self.state)
+                            check_button_status(self.indi_device, self.echo_device, self.state)
+                        except EchoError:
+                            break
                         except IndexError:
                             logging.exception('Bad message - lost connection')
                         except KeyboardInterrupt:
@@ -274,7 +318,7 @@ class Main_Thread():
             # Bit of cleaning up as delcom throws 
             # some other threads around
             try:
-                del indi_device
+                del self.indi_device
             except:
-                pass
+                logging.exception('Error closing indicator device.')
             logging.info('Exiting')
