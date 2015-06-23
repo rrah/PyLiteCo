@@ -21,14 +21,12 @@ Copyright (C) 2015 Robert Walker
 """
 
 # Builtin imports
-import threading
-import sys
 import logging
-from time import sleep
 
 
 # Does communication to usb. Surprisingly
 import pywinusb.hid as hid
+
 
 PIN_GREEN   = 0b00000001
 """Byte value for green pin"""

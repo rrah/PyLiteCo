@@ -18,19 +18,14 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# For freeze
-from encodings import hex_codec, utf_8_sig, utf_8, ascii
-
 
 # Built-in modules
 import json
 import logging
 import logging.handlers
-import os
 import sys
 import threading
-if sys.platform == 'win32':
-    import pywintypes
+import pywintypes
 from time import sleep
 
 
@@ -186,23 +181,12 @@ class Main_Thread():
     
     def run(self, config_file_entered = None, log_file_entered = None):
         
-        platform = sys.platform
-        if sys.platform == 'win32':
-            log_file = 'pyliteco.log'
-            config_file = 'pyliteco.json'
-        elif platform == 'linux2':
-            # Definitely raspbian, maybe others
-            log_file = '/var/log/pyliteco.log'
-            config_file = '/etc/pyliteco.json'
-        else:
-            # Catch all the rest and store locally
-            log_file = 'pyliteco.log'
-            config_file = 'pyliteco.json'
+        log_file = 'pyliteco.log'
+        config_file = 'pyliteco.json'
         
         logging_set_up(level = logging.DEBUG, log_file = log_file)
         
         logging.info('Starting up')
-        logging.debug('Running on {}'.format(sys.platform))
         
         if config_file_entered is not None:
             config_file = config_file_entered
