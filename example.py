@@ -1,4 +1,4 @@
-"""Example config json to create file if none is avaliable.
+"""Example and default config json's to use if none are avaliable.
 
 Author: Robert Walker <rrah99@gmail.com>
 
@@ -31,3 +31,46 @@ EXAMPLE_CONFIG = '\
 
 EXAMPLE_CONFIG_JSON = json.loads(EXAMPLE_CONFIG)
 """JSON object representing example settings."""
+
+DEFAULT_CONFIG = '''
+{
+    "ip": "127.0.0.1",
+    "active": {
+            "colour": "red",
+            "flash": false,
+            "flash_speed": 1
+    },
+    "inactive": {
+            "colour": "off",
+            "flash": false,
+            "flash_speed": 1
+    },
+    "complete": {
+            "colour": "green",
+            "flash": true,
+            "flash_speed": 1
+    },
+    "waiting": {
+            "colour": "off",
+            "flash": false,
+            "flash_speed": 1
+    },
+    "paused": {
+            "colour": "yellow",
+            "flash": false,
+            "flash_speed": 1
+    },
+    "error": {
+            "colour": "off",
+            "flash": false,
+            "flash_speed": 1
+    },
+    "unknown": {
+            "colour": "off",
+            "flash": false,
+            "flash_speed": 1
+    }
+}
+'''
+
+DEFAULT_CONFIG_JSON = json.loads(DEFAULT_CONFIG)

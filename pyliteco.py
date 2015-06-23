@@ -27,7 +27,7 @@ import sys
 import threading
 import pywintypes
 from time import sleep
-
+import urllib2
 
 # Local modules
 import echoip
@@ -187,12 +187,20 @@ class Main_Thread():
         try:
             with open(file_) as CONFIG_FILE:
                 CONFIG = json.load(CONFIG_FILE)
-                CONFIG.update(echoip.get_echo_config())
-                
+                try:
+                    CONFIG.update(echoip.get_echo_config())
+                except (urllib2.URLError, echoip.EchoipError):
+                    from example import DEFAULT_CONFIG_JSON
+                    logging.warning('Cannot reach config server. Using default settings')
+                    CONFIG.update(DEFAULT_CONFIG_JSON)
                 if old_config is not None:
                     args = {}
                     for thing in CONFIG.keys():
-                        if cmp(old_config[thing], CONFIG[thing]) != 0:
+                        try:
+                            if cmp(old_config[thing], CONFIG[thing]) != 0:
+                                args[thing] = CONFIG[thing]
+                        except KeyError:
+                            # Not in old config, so a change
                             args[thing] = CONFIG[thing]
                     if len(args) == 0:
                         # No changes
@@ -210,6 +218,13 @@ class Main_Thread():
                         # No change to indicator
                         pass
                     
+                    try:
+                        brightness = args['brightness']
+                        self.indi_device.set_brightness(brightness)
+                    except KeyError:
+                        # No change to brightness
+                        pass
+                    
                     # Deal with new echo details
                     if set(args.keys()).intersection(set(['user', 'pass', 'ip'])):
                         self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
@@ -223,6 +238,7 @@ class Main_Thread():
                     logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
                 return CONFIG
         except IOError:
+            logging.warning('Cannot find config file. Creating new one with defaults.')
             from example import EXAMPLE_CONFIG_JSON as CONFIG
             with open(file_, 'a') as open_file:
                 json.dump(CONFIG, open_file)
@@ -254,6 +270,11 @@ class Main_Thread():
             
             # And the indicator device
             self.indi_device = indicators.get_device(CONFIG['indicator'])()
+            try:
+                self.indi_device.set_brightness(CONFIG['brightness'])
+            except KeyError:
+                # No brightness in config, use device default
+                pass
             
             # Loop until connection
             while self.is_running():

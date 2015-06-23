@@ -73,3 +73,6 @@ def get_echo_config():
 class EchoipError(Exception):
     
     pass
+
+if __name__ == '__main__':
+    print get_echo_config()
