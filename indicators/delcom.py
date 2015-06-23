@@ -133,6 +133,7 @@ class Device(object):
         
         Arguements:
             brightness (int): Brightness value between 0 and 100.
+                                Below 10 causes flashing
         """
         
         self._set_pwr(brightness)
