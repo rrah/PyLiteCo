@@ -224,9 +224,9 @@ class Main_Thread():
                 return CONFIG
         except IOError:
             from example import EXAMPLE_CONFIG_JSON as CONFIG
-            with open(file_, 'a') as file_:
-                json.dump(CONFIG, file_)
-                return self.load_config(file_)
+            with open(file_, 'a') as open_file:
+                json.dump(CONFIG, open_file)
+            return self.load_config(file_)
         except ValueError:
             logging.exception('Bad config file')
     
