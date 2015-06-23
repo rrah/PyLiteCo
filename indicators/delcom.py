@@ -20,29 +20,21 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# Builtin imports
+# Imports
 import logging
-
-
-# Does communication to usb. Surprisingly
 import pywinusb.hid as hid
+from pywinusb.hid import HIDError
 
-
-PIN_GREEN   = 0b00000001
-"""Byte value for green pin"""
-PIN_YELLOW  = 0b00000010
-"""Byte value for yellow pin"""
-PIN_RED     = 0b00000100
-"""Byte value for red pin"""
 
 class Device(object):
     
     """Delcom Products generation 2 USB device class."""
 
     # Device Constants
-    VENDOR_ID       = 0x0FC5    #: Delcom Product ID
-    PRODUCT_ID      = 0xB080    #: Delcom Product ID
-    INTERFACE_ID    = 0         #: The interface we use
+    VENDOR_ID       = 0x0FC5    
+    """Delcom Vendor ID."""
+    PRODUCT_ID      = 0xB080
+    """Delcom Product ID."""
     allowed_colours = {'green': [0x01, 0xFF], 
                                 'yellow': [0x04, 0xFF], 
                                 'red': [0x02, 0xFF],
@@ -53,6 +45,7 @@ class Device(object):
                     'yellow'    : 4,
                     'red'       : 2
                     }
+    
 
     def __init__(self):
         '''
@@ -60,22 +53,17 @@ class Device(object):
         
         # Set some default attributes
         self._flashing_pin = None
-        self._pressed = False
         self._current_colour = 'off'
-        self._been_pressed = False
         
         filter = hid.HidDeviceFilter(vendor_id = self.VENDOR_ID, product_id = self.PRODUCT_ID)
         self.device = filter.get_devices()[0]
         
         self.device.open()
         
-        #self.device.set_raw_data_handler(self._read)
-        
         self._force_off()
         
         # Turn on event counter and reset
         self._write_data(self._make_packet(101, 38, 0x01))
-        self._read_data(8)
         
         self.set_brightness(50)
     
@@ -96,6 +84,9 @@ class Device(object):
         Keyword arguements:
             flash_speed (int): Seconds to stay in each state.
                 Floored to 0.01 and ceilinged to 2.55
+                
+        Returns:
+            None.
         """
         
         # Get the flash speed in the right range
@@ -124,7 +115,7 @@ class Device(object):
     def flashing_stop(self):
         
         """Check if a pin is actually flashing, and if so
-        turn it off and turn off flashing
+        turn it off and turn off flashing.
         """
         
         if self._flashing_pin is not None:
@@ -169,45 +160,24 @@ class Device(object):
         """See if the button has been pressed.
         
         Return: 
-            Number of presses
-            True if pressed False otherwise.
-        """
-       
-        presses = 0
-        
-        # Sometimes doesn't get a return, so repeat until data is got
-        counter = self._read_data(8)[0]
-        
-        # Count up the number of presses since last read
-        while counter > 0:
-            presses += 1
-            counter -= 1 
-        if presses > 0:
-            self._been_pressed = True
-        return presses, self._pressed
-        
-    def has_been_pressed(self):
-        
-        """Check to see if the button has been pressed.
-        
-        Return:
-            True if button has been pressed, else False.
+            True if pressed, False otherwise.
         """
         
-        self.read_switch()
-        been_pressed = self._been_pressed
+        data = None
+        while not data:
+            try:
+                data = self._read_data(8)
+            except HIDError:
+                pass
+        if data[8:11] == [0, 0, 0]:
+            # Bad data, disregard
+            return False
+        counter = data[0]
         
-        # Reset attribute
-        self._been_pressed = False
-        return been_pressed
-
-    def get_pressed(self):
-        
-        return self._pressed
-    
-    def _read(self, data):
-        
-        return data
+        if counter > 0:
+            return True
+        else:
+            return False
 
     def _read_data(self, cmd):
 
@@ -215,16 +185,6 @@ class Device(object):
         for report in reports:
             if report.report_id == cmd:
                 return report.get()
-    
-    def read(self):
-        
-        """Straight-up read the device buffer.
-        
-        Return:
-            Byte-array of data.
-        """
-        
-        return self._read_data(0x0008)
 
 
     def _get_current_colour(self):

@@ -80,16 +80,18 @@ def load_config(file_ = 'config.json'):
     
     try:
         with open(file_) as CONFIG_FILE:
-            return json.load(CONFIG_FILE)
+            CONFIG = json.load(CONFIG_FILE)
+            CONFIG.update(echoip.get_echo_config())
+            if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
+                logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+            return CONFIG
     except IOError:
         from example import EXAMPLE_CONFIG_JSON as CONFIG
         with open(file_, 'a') as file_:
             json.dump(CONFIG, file_)
+            return load_config(file_)
     except ValueError:
         logging.exception('Bad config file')
-        
-    if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-        logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
 
 
 def get_light_action(config_json, device):
@@ -149,7 +151,7 @@ def check_status(echo_device, indi_device, config, state_old = None):
 
 def check_button_status(indi_device, echo_device, state = None):
     
-    if indi_device.has_been_pressed():
+    if indi_device.read_switch():
         logging.debug('Button pressed while in state {}'.format(state))
         if state == 'active':
             # recording, so pause
@@ -174,9 +176,22 @@ class Main_Thread():
         
     def is_running(self):
         
+        """Check whether the thread should be running.
+        
+        Returns:
+            True if running, else false
+        """
+        
         return self.running
     
     def stop(self):
+        
+        """Set attribute so thread stops running.
+        
+        Returns:
+            None
+        """
+        
         self.running = False
     
     def run(self, config_file_entered = None, log_file_entered = None):
@@ -208,10 +223,6 @@ class Main_Thread():
             while self.is_running():              
                 # Reload config
                 CONFIG = load_config(config_file)
-                #try:
-                CONFIG.update(echoip.get_echo_config())
-                #except URLError:
-                    #pass
                 logging.debug(CONFIG)
                 
                 # Log echo ip
@@ -221,21 +232,28 @@ class Main_Thread():
                 echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
                 if not echo_device.connection_test.success():
                     # Failed to connect, will try again
-                    logging.error('Something went wrong connecting. Will try again in 10 seconds')
+                    logging.error('Something went wrong connecting. Will try again in a minute')
                     logging.debug(echo_device.connection_test)
                     
                     # Check if currently doing error flash and 
                     if not error_flash:
                         get_light_action(CONFIG['error'], indi_device)
                         error_flash = True
-                    sleep(10)
+                    sleep(60)
                 else:
                     # Connected, so (re)set some more variables
                     error_flash = False
                     state = None
+                    count = 0
                     
                     # And loop for status
                     while self.is_running():
+                        if count < 60:
+                            count += 1
+                        else:
+                            logging.debug('Reloading config')
+                            CONFIG = load_config(config_file)
+                            count = 0
                         try:
                             state = check_status(echo_device, indi_device, CONFIG, state)
                             check_button_status(indi_device, echo_device, state)
@@ -260,5 +278,5 @@ class Main_Thread():
             try:
                 del indi_device
             except:
-                pass
+                logging.exception('Error closing indicator device.')
             logging.info('Exiting')
