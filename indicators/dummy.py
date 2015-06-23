@@ -56,3 +56,16 @@ class Device(object):
             False. Always."""
         
         return False
+    
+    def set_brightness(self, brightness):
+        
+        """Baby, you light up my world.
+        
+        Arguements:
+            brightness (int): Eh, basically ignored.
+            
+        Return:
+            None.
+        """
+        
+        pass
