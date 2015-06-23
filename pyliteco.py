@@ -196,7 +196,11 @@ class Main_Thread():
                 if old_config is not None:
                     args = {}
                     for thing in CONFIG.keys():
-                        if cmp(old_config[thing], CONFIG[thing]) != 0:
+                        try:
+                            if cmp(old_config[thing], CONFIG[thing]) != 0:
+                                args[thing] = CONFIG[thing]
+                        except KeyError:
+                            # Not in old config, so a change
                             args[thing] = CONFIG[thing]
                     if len(args) == 0:
                         # No changes
@@ -212,6 +216,13 @@ class Main_Thread():
                         logging.debug('Reset status to None.')
                     except KeyError:
                         # No change to indicator
+                        pass
+                    
+                    try:
+                        brightness = args['brightness']
+                        self.indi_device.set_brightness(brightness)
+                    except KeyError:
+                        # No change to brightness
                         pass
                     
                     # Deal with new echo details
@@ -259,6 +270,11 @@ class Main_Thread():
             
             # And the indicator device
             self.indi_device = indicators.get_device(CONFIG['indicator'])()
+            try:
+                self.indi_device.set_brightness(CONFIG['brightness'])
+            except KeyError:
+                # No brightness in config, use device default
+                pass
             
             # Loop until connection
             while self.is_running():
