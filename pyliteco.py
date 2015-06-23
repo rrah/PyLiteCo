@@ -27,7 +27,7 @@ import sys
 import threading
 import pywintypes
 from time import sleep
-
+import urllib2
 
 # Local modules
 import echoip
@@ -187,8 +187,12 @@ class Main_Thread():
         try:
             with open(file_) as CONFIG_FILE:
                 CONFIG = json.load(CONFIG_FILE)
-                CONFIG.update(echoip.get_echo_config())
-                
+                try:
+                    CONFIG.update(echoip.get_echo_config())
+                except (urllib2.URLError, echoip.EchoipError):
+                    from example import DEFAULT_CONFIG_JSON
+                    logging.warning('Cannot reach config server. Using default settings')
+                    CONFIG.update(DEFAULT_CONFIG_JSON)
                 if old_config is not None:
                     args = {}
                     for thing in CONFIG.keys():
@@ -223,6 +227,7 @@ class Main_Thread():
                     logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
                 return CONFIG
         except IOError:
+            logging.warning('Cannot find config file. Creating new one with defaults.')
             from example import EXAMPLE_CONFIG_JSON as CONFIG
             with open(file_, 'a') as open_file:
                 json.dump(CONFIG, open_file)
