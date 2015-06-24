@@ -21,11 +21,11 @@ Copyright (C) 2015 Robert Walker
 """
 
 # Imports
+import indicators.indicator
 import pywinusb.hid as hid
-from pywinusb.hid import HIDError
 
 
-class Device(object):
+class Device(indicators.indicator.Indicator):
     
     """Delcom Products generation 2 USB device class."""
 
@@ -167,7 +167,7 @@ class Device(object):
         while not data:
             try:
                 data = self._read_data(8)
-            except HIDError:
+            except hid.HIDError:
                 pass
         if data[8:11] == [0, 0, 0]:
             # Bad data, disregard

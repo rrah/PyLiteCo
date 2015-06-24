@@ -41,37 +41,6 @@ CONFIG_URL = 'http://yorkie.york.ac.uk/echolight.php'
 """Base URL for gettting config files."""
 
 
-def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
-    
-    """Set up logging so it prints to console.
-    
-    Arguements:
-        level: Logging level, as defined within the logging module.
-        log_file (string): File to dump logs to.
-    
-    Returns:
-        None
-    """
-
-    formatter_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    formatter = logging.Formatter(formatter_string)
-    logging.basicConfig(filename = log_file, level = level, format = formatter_string)    
-    root = logging.getLogger(__name__)
-    root.setLevel(level)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(level)
-    ch.setFormatter(formatter)
-    root.addHandler(ch)
-    
-    try:
-        nthandler = logging.handlers.NTEventLogHandler('PyLiteCo', 
-                        dllname = 'C:\\Program Files (x86)\\pyliteco\\pyliteco-service.exe')
-        nthandler.setLevel(level)
-        root.addHandler(nthandler)
-    except pywintypes.error as err:
-        logger.warn('{}'.format(err))
-
-
 def get_light_action(config_json, device):
     
     """Return the method to set the light to what the config file wants.
@@ -259,8 +228,6 @@ class Main_Thread():
         
         log_file = 'pyliteco.log'
         config_file = 'pyliteco.json'
-        
-        #logging_set_up(level = logging.DEBUG, log_file = log_file)
         
         if config_file_entered is not None:
             config_file = config_file_entered

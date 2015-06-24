@@ -30,12 +30,15 @@ if __name__ == '__main__':
     
     formatter_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(formatter_string)
-    logging.basicConfig(format = formatter_string)    
-    root = logging.getLogger(__name__)
+    logging.basicConfig(filename = 'pyliteco.log', format = formatter_string)    
+    root = logging.getLogger()
     root.setLevel(logging.NOTSET)
     ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(formatter)
     root.addHandler(ch)
+    
+    logger = logging.getLogger(__name__)
+    logger.info('Starting up as app.')
     
     import argparse
     
