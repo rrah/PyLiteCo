@@ -15,6 +15,7 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import logging
 import pythoncom
 import servicemanager
 import socket
@@ -24,11 +25,14 @@ import win32service
 import win32event
 
 import pyliteco
+from logging import NOTSET
 
 
 class pyliteco_svc (win32serviceutil.ServiceFramework):
     _svc_name_ = "pyliteco"
     _svc_display_name_ = "PyLiteCo"
+    _svc_description_ = "Service to display Echo box state on Delcom indicator"
+    _svc_deps_ = ["EventLog"]
 
     def __init__(self,args):
         win32serviceutil.ServiceFramework.__init__(self,args)
@@ -41,10 +45,16 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         self.thread.stop()
 
     def SvcDoRun(self):
-        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
-                              servicemanager.PYS_SERVICE_STARTED,
-                              (self._svc_name_,''))
-        self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json", "C:\Program Files (x86)\pyliteco\pyliteco.log")
+        root = logging.getLogger()
+        nthandler = logging.handlers.NTEventLogHandler('PyLiteCo')
+        root.addHandler(nthandler)
+        
+        root.setLevel(logging.NOTSET)
+        
+        logging.info('Starting up')
+        
+        self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json", 
+                                           "C:\Program Files (x86)\pyliteco\pyliteco.log")
         self.thread.start()
 
 if __name__ == '__main__':

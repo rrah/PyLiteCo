@@ -55,7 +55,8 @@ Section "install"
 	SetOutPath $INSTDIR
 	StrCpy $0 "pyliteco-service.exe"
 	File "/oname=$0" "dist\win_service.exe"
-	SimpleSC::InstallService "pyliteco" "PyLiteCo" 16 2 "$INSTDIR\$0"
+	Execwait '"C:\Program Files (x86)\pyliteco\pyliteco-service.exe" install'
+	#SimpleSC::InstallService "pyliteco" "PyLiteCo" 16 2 "$INSTDIR\$0"
 	SimpleSC::StartService "pyliteco" '' 15
 
 	# Readme

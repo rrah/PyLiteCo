@@ -21,7 +21,6 @@ Copyright (C) 2015 Robert Walker
 """
 
 # Imports
-import logging
 import pywinusb.hid as hid
 from pywinusb.hid import HIDError
 
@@ -133,6 +132,7 @@ class Device(object):
         
         Arguements:
             brightness (int): Brightness value between 0 and 100.
+                                Below 10 causes flashing
         """
         
         self._set_pwr(brightness)
