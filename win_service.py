@@ -82,9 +82,11 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         nthandler = logging.handlers.NTEventLogHandler('PyLiteCo')
         root.addHandler(nthandler)
         
-        root.setLevel(logging.NOTSET)
+        root.setLevel(logging.INFO)
         
-        logging.info('Starting up')
+        logger = logging.getLogger(__name__)
+        
+        logger.info('Starting up')
         
         self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json", 
                                            "C:\Program Files (x86)\pyliteco\pyliteco.log")

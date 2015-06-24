@@ -22,13 +22,16 @@ import indicators.indicator
 import logging
 
 
+logger = logging.getLogger(__name__)
+
+
 class Device(indicators.indicator.Indicator):
     
     """Pretends to be an indicator so stuff can be tested."""
     
     def _report(self, msg):
-        logger = logging.getLogger(__name__)
-        logging.info(msg)
+        
+        logger.info(msg)
         
     def flashing_start(self, colours, flash_speed):
         
