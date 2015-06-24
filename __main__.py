@@ -21,11 +21,21 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import logging
 import pyliteco
+import sys
 
-from time import sleep
 
 if __name__ == '__main__':
+    
+    formatter_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(formatter_string)
+    logging.basicConfig(format = formatter_string)    
+    root = logging.getLogger(__name__)
+    root.setLevel(logging.NOTSET)
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setFormatter(formatter)
+    root.addHandler(ch)
     
     import argparse
     

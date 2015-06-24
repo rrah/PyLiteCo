@@ -260,9 +260,7 @@ class Main_Thread():
         log_file = 'pyliteco.log'
         config_file = 'pyliteco.json'
         
-        logging_set_up(level = logging.DEBUG, log_file = log_file)
-        
-        logger.info('Starting up')
+        #logging_set_up(level = logging.DEBUG, log_file = log_file)
         
         if config_file_entered is not None:
             config_file = config_file_entered
@@ -350,5 +348,5 @@ class Main_Thread():
             try:
                 del self.indi_device
             except:
-                logging.exception('Error closing indicator device.')
-            logging.info('Exiting')
+                logger.exception('Error closing indicator device.')
+            logger.info('Exiting')
