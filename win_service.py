@@ -32,6 +32,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
     _svc_name_ = "pyliteco"
     _svc_display_name_ = "PyLiteCo"
     _svc_description_ = "Service to display Echo box state on Delcom indicator"
+    _svc_deps_ = ["EventLog"]
 
     def __init__(self,args):
         win32serviceutil.ServiceFramework.__init__(self,args)
