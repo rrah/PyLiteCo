@@ -189,9 +189,14 @@ class Main_Thread():
                 CONFIG = json.load(CONFIG_FILE)
                 try:
                     CONFIG.update(echoip.get_echo_config())
-                except (urllib2.URLError, echoip.EchoipError):
+                except urllib2.URLError:
                     from example import DEFAULT_CONFIG_JSON
-                    logging.warning('Cannot reach config server. Using default settings')
+                    logging.warning('Cannot reach config server. Using default settings.')
+                    CONFIG.update(DEFAULT_CONFIG_JSON)
+                except echoip.EchoipError:
+                    logging.warning('Config server refused to return details. Check config server details.\r\n' +
+                                    '\tUsing default config.')
+                    from example import DEFAULT_CONFIG_JSON
                     CONFIG.update(DEFAULT_CONFIG_JSON)
                 if old_config is not None:
                     args = {}
