@@ -46,8 +46,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
 
     def SvcDoRun(self):
         root = logging.getLogger()
-        nthandler = logging.handlers.NTEventLogHandler('PyLiteCo', 
-                        dllname = 'C:\\Program Files (x86)\\pyliteco\\pyliteco-service.exe')
+        nthandler = logging.handlers.NTEventLogHandler('PyLiteCo')
         root.addHandler(nthandler)
         
         root.setLevel(logging.NOTSET)
