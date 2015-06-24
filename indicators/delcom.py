@@ -21,7 +21,6 @@ Copyright (C) 2015 Robert Walker
 """
 
 # Imports
-import logging
 import pywinusb.hid as hid
 from pywinusb.hid import HIDError
 

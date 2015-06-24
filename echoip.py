@@ -22,11 +22,8 @@ Copyright (C) 2015 Robert Walker
 """
 
 import json
-import logging
 import urllib2
-import sys
 
-logging.getLogger()
 
 SERVER = 'yorkie.york.ac.uk/echolight.php'
 PROTOCOL = 'http'

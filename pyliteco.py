@@ -34,6 +34,8 @@ import echoip
 import echo360.capture_device as echo
 import indicators
 
+logger = logging.getLogger(__name__)
+
 
 CONFIG_URL = 'http://yorkie.york.ac.uk/echolight.php'
 """Base URL for gettting config files."""
@@ -51,9 +53,10 @@ def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
         None
     """
 
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logging.basicConfig(filename=log_file, level = level, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')    
-    root = logging.getLogger()
+    formatter_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(formatter_string)
+    logging.basicConfig(filename = log_file, level = level, format = formatter_string)    
+    root = logging.getLogger(__name__)
     root.setLevel(level)
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(level)
@@ -61,11 +64,12 @@ def logging_set_up(level = logging.DEBUG, log_file = 'pyliteco.log'):
     root.addHandler(ch)
     
     try:
-        nthandler = logging.handlers.NTEventLogHandler('pyliteco')
+        nthandler = logging.handlers.NTEventLogHandler('PyLiteCo', 
+                        dllname = 'C:\\Program Files (x86)\\pyliteco\\pyliteco-service.exe')
         nthandler.setLevel(level)
         root.addHandler(nthandler)
-    except pywintypes.error:
-        pass
+    except pywintypes.error as err:
+        logger.warn('{}'.format(err))
 
 
 def get_light_action(config_json, device):
@@ -96,7 +100,7 @@ def get_light_action(config_json, device):
             
             return device.set_light(config_json['colour'])
     except KeyError:
-        logging.exception('Bad config file')
+        logger.exception('Bad config file')
         raise
         
     
@@ -106,27 +110,27 @@ def check_status(echo_device, indi_device, config, state_old = None):
     Connect to echo box and check state"""
     
     state_string = echo_device.capture_status_str()
-    logging.debug(state_string)
+    logger.debug(state_string)
     state = [thing.split('=')[1] for thing in state_string.split(';') if 'State' in thing][0]
-    logging.debug('Echo box in state {}'.format(state))
+    logger.debug('Echo box in state {}'.format(state))
     if state_old == state: # Avoid unneccesary changes
         return state
-    logging.info('Change of state from {} to {}'.format(state_old, state))
+    logger.info('Change of state from {} to {}'.format(state_old, state))
     if state in ['inactive', 'active', 'waiting', 'complete', 'paused']:
         try:
             get_light_action(config[state], indi_device)
         except KeyError:
-            logging.exception('Bad light state config')
+            logger.exception('Bad light state config')
     else:
         get_light_action(light_state_config['unknown'], indi_device)
-        logging.warning('Echo box in unknown state: {}'.format(state))
+        logger.warning('Echo box in unknown state: {}'.format(state))
     return state
 
 
 def check_button_status(indi_device, echo_device, state = None):
     
     if indi_device.read_switch():
-        logging.debug('Button pressed while in state {}'.format(state))
+        logger.debug('Button pressed while in state {}'.format(state))
         if state == 'active':
             # recording, so pause
             echo_device.capture_pause()
@@ -191,10 +195,10 @@ class Main_Thread():
                     CONFIG.update(echoip.get_echo_config())
                 except urllib2.URLError:
                     from example import DEFAULT_CONFIG_JSON
-                    logging.warning('Cannot reach config server. Using default settings.')
+                    logger.warning('Cannot reach config server. Using default settings.')
                     CONFIG.update(DEFAULT_CONFIG_JSON)
                 except echoip.EchoipError:
-                    logging.warning('Config server refused to return details. Check config server details.\r\n' +
+                    logger.warning('Config server refused to return details. Check config server details.\r\n' +
                                     '\tUsing default config.')
                     from example import DEFAULT_CONFIG_JSON
                     CONFIG.update(DEFAULT_CONFIG_JSON)
@@ -217,8 +221,8 @@ class Main_Thread():
                         del self.indi_device
                         self.indi_device = indicators.get_device(indicator)()
                         self.state = None
-                        logging.info('Change indicator type to {}.'.format(indicator))
-                        logging.debug('Reset status to None.')
+                        logger.info('Change indicator type to {}.'.format(indicator))
+                        logger.debug('Reset status to None.')
                     except KeyError:
                         # No change to indicator
                         pass
@@ -235,21 +239,21 @@ class Main_Thread():
                         self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
                         if not self.echo_device.connection_test.success():
                             # Failed to connect
-                            logging.error('Something went wrong connecting to echo box.')
-                            logging.debug(self.echo_device.connection_test)
+                            logger.error('Something went wrong connecting to echo box.')
+                            logger.debug(self.echo_device.connection_test)
                             raise EchoError('Unable to connect.')
                 
                 if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-                    logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+                    logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
                 return CONFIG
         except IOError:
-            logging.warning('Cannot find config file. Creating new one with defaults.')
+            logger.warning('Cannot find config file. Creating new one with defaults.')
             from example import EXAMPLE_CONFIG_JSON as CONFIG
             with open(file_, 'a') as open_file:
                 json.dump(CONFIG, open_file)
             return self.load_config(file_)
         except ValueError:
-            logging.exception('Bad config file')
+            logger.exception('Bad config file')
     
     def run(self, config_file_entered = None, log_file_entered = None):
         
@@ -258,7 +262,7 @@ class Main_Thread():
         
         logging_set_up(level = logging.DEBUG, log_file = log_file)
         
-        logging.info('Starting up')
+        logger.info('Starting up')
         
         if config_file_entered is not None:
             config_file = config_file_entered
@@ -289,17 +293,17 @@ class Main_Thread():
                 except EchoError:
                     sleep(60)
                     continue
-                logging.debug(CONFIG)
+                logger.debug(CONFIG)
                 
                 # Log echo ip
-                logging.info('Got echo url {}'.format(CONFIG['ip']))
+                logger.info('Got echo url {}'.format(CONFIG['ip']))
                 
                 # Try to connect
                 self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
                 if not self.echo_device.connection_test.success():
                     # Failed to connect, will try again
-                    logging.error('Something went wrong connecting to echo box. Will try again in a minute')
-                    logging.debug(self.echo_device.connection_test)
+                    logger.error('Something went wrong connecting to echo box. Will try again in a minute')
+                    logger.debug(self.echo_device.connection_test)
                     
                     # Check if currently doing error flash and 
                     if not error_flash:
@@ -318,7 +322,7 @@ class Main_Thread():
                             if count < 60:
                                 count += 1
                             else:
-                                logging.debug('Reloading config')
+                                logger.debug('Reloading config')
                                 CONFIG = self.load_config(config_file, CONFIG)
                                 count = 0
                             self.state = check_status(self.echo_device, self.indi_device, CONFIG, self.state)
@@ -326,11 +330,11 @@ class Main_Thread():
                         except EchoError:
                             break
                         except IndexError:
-                            logging.exception('Bad message - lost connection')
+                            logger.exception('Bad message - lost connection')
                         except KeyboardInterrupt:
                             raise KeyboardInterrupt
                         except:
-                            logging.exception('Something went a little wrong. Continuing loop')
+                            logger.exception('Something went a little wrong. Continuing loop')
                         finally:
                             sleep(1) # Stop the thrashing
                         
@@ -338,7 +342,7 @@ class Main_Thread():
             # Someone wants to escape!
             pass
         except:
-            logging.exception(None)
+            logger.exception(None)
             sys.exit(1)
         finally:
             # Bit of cleaning up as delcom throws 
