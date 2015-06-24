@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-"""Empty, here to make package
+"""Package __init__, exposes function to get required device.
 
 Author: Robert Walker <rrah99@gmail.com>
 
@@ -21,6 +21,16 @@ Copyright (C) 2015 Robert Walker
 """
 
 def get_device(device):
+    
+    """Find the relevant device (as given by device) and return
+    the class.
+    
+    Arguements:
+        device (string): Case-sensitive string for the device - Currently 'dummy' or 'delcom'.
+        
+    Return:
+        Device class as required
+    """
     
     if device == 'dummy':
         import dummy

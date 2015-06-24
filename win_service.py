@@ -25,10 +25,23 @@ import win32service
 import win32event
 
 import pyliteco
-from logging import NOTSET
 
 
 class pyliteco_svc (win32serviceutil.ServiceFramework):
+    
+    """Pyliteco service class.
+    
+    Attributes:
+        _svc_name_ (string): Name for the service.
+        _svc_display_name_ (string): Display name for the service.
+        _svc_description_ (string): Description for the service.
+        _svc_deps_ (list): Dependencies for the service
+        
+    Methods:
+        SvcStop: Run to stop the service.
+        SvcDoRun: Code to run when service is running.
+    """
+    
     _svc_name_ = "pyliteco"
     _svc_display_name_ = "PyLiteCo"
     _svc_description_ = "Service to display Echo box state on Delcom indicator"
@@ -40,11 +53,31 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         socket.setdefaulttimeout(60)
 
     def SvcStop(self):
+        
+        """Stop the running thread and end the service.
+        
+        Arguements:
+            None
+            
+        Return:
+            None
+        """
+        
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.hWaitStop)
         self.thread.stop()
 
     def SvcDoRun(self):
+        
+        """Kick off the thread to run the service.
+        
+        Arguements:
+            None
+            
+        Return:
+            None
+        """
+        
         root = logging.getLogger()
         nthandler = logging.handlers.NTEventLogHandler('PyLiteCo')
         root.addHandler(nthandler)

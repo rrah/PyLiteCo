@@ -18,12 +18,17 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-class Device(object):
+import indicators.indicator
+import logging
+
+
+class Device(indicators.indicator.Indicator):
     
     """Pretends to be an indicator so stuff can be tested."""
     
     def _report(self, msg):
-        print msg
+        logger = logging.getLogger(__name__)
+        logging.info(msg)
         
     def flashing_start(self, colours, flash_speed):
         

@@ -56,7 +56,6 @@ Section "install"
 	StrCpy $0 "pyliteco-service.exe"
 	File "/oname=$0" "dist\win_service.exe"
 	Execwait '"C:\Program Files (x86)\pyliteco\pyliteco-service.exe" install'
-	#SimpleSC::InstallService "pyliteco" "PyLiteCo" 16 2 "$INSTDIR\$0"
 	SimpleSC::StartService "pyliteco" '' 15
 
 	# Readme
@@ -70,7 +69,7 @@ Section "uninstall"
 
 	# Stop and remove service
 	SimpleSC::StopService "pyliteco" '' 15
-	SimpleSC::RemoveService "pyliteco"
+	Execwait '"C:\Program Files (x86)\pyliteco\pyliteco-service.exe" remove'
 
 	# remove files
 	delete "$INSTDIR\pyliteco.json"
