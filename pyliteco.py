@@ -30,15 +30,18 @@ from time import sleep
 import urllib2
 
 # Local modules
-import echoip
+import config
 import echo360.capture_device as echo
 import indicators
 
 logger = logging.getLogger(__name__)
 
 
-CONFIG_URL = 'http://yorkie.york.ac.uk/echolight.php'
-"""Base URL for gettting config files."""
+class EchoError(Exception):
+    
+    """Something wrong connecting to echobox"""
+    
+    pass
 
 
 def get_light_action(config_json, device):
@@ -106,10 +109,7 @@ def check_button_status(indi_device, echo_device, state = None):
         elif state == 'paused':
             # paused, so restart
             echo_device.capture_record()
-            
-class EchoError(Exception):
-    
-    pass
+
 
 class Main_Thread():
     
@@ -157,72 +157,52 @@ class Main_Thread():
             Dict with configuration options.
         """
         
-        try:
-            with open(file_) as CONFIG_FILE:
-                CONFIG = json.load(CONFIG_FILE)
+        CONFIG = config.get_config(file_)
+        
+        if old_config is not None:
+            args = {}
+            for thing in CONFIG.keys():
                 try:
-                    CONFIG.update(echoip.get_echo_config())
-                except urllib2.URLError:
-                    from example import DEFAULT_CONFIG_JSON
-                    logger.warning('Cannot reach config server. Using default settings.')
-                    CONFIG.update(DEFAULT_CONFIG_JSON)
-                except echoip.EchoipError:
-                    logger.warning('Config server refused to return details. Check config server details.\r\n' +
-                                    '\tUsing default config.')
-                    from example import DEFAULT_CONFIG_JSON
-                    CONFIG.update(DEFAULT_CONFIG_JSON)
-                if old_config is not None:
-                    args = {}
-                    for thing in CONFIG.keys():
-                        try:
-                            if cmp(old_config[thing], CONFIG[thing]) != 0:
-                                args[thing] = CONFIG[thing]
-                        except KeyError:
-                            # Not in old config, so a change
-                            args[thing] = CONFIG[thing]
-                    if len(args) == 0:
-                        # No changes
-                        return old_config
-                    
-                    # Deal with new indicator
-                    try:
-                        indicator = args['indicator']
-                        del self.indi_device
-                        self.indi_device = indicators.get_device(indicator)()
-                        self.state = None
-                        logger.info('Change indicator type to {}.'.format(indicator))
-                        logger.debug('Reset status to None.')
-                    except KeyError:
-                        # No change to indicator
-                        pass
-                    
-                    try:
-                        brightness = args['brightness']
-                        self.indi_device.set_brightness(brightness)
-                    except KeyError:
-                        # No change to brightness
-                        pass
-                    
-                    # Deal with new echo details
-                    if set(args.keys()).intersection(set(['user', 'pass', 'ip'])):
-                        self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
-                        if not self.echo_device.connection_test.success():
-                            # Failed to connect
-                            logger.error('Something went wrong connecting to echo box.')
-                            logger.debug(self.echo_device.connection_test)
-                            raise EchoError('Unable to connect.')
-                
-                if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-                    logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
-                return CONFIG
-        except IOError:
-            logger.warning('Cannot find config file. Creating new one with defaults.')
-            from example import EXAMPLE_CONFIG_JSON as CONFIG
-            with open(file_, 'a') as open_file:
-                json.dump(CONFIG, open_file)
-            return self.load_config(file_)
-        except ValueError:
-            logger.exception('Bad config file')
+                    if cmp(old_config[thing], CONFIG[thing]) != 0:
+                        args[thing] = CONFIG[thing]
+                except KeyError:
+                    # Not in old config, so a change
+                    args[thing] = CONFIG[thing]
+            if len(args) == 0:
+                # No changes
+                return old_config
+            
+            # Deal with new indicator
+            try:
+                indicator = args['indicator']
+                del self.indi_device
+                self.indi_device = indicators.get_device(indicator)()
+                self.state = None
+                logger.info('Change indicator type to {}.'.format(indicator))
+                logger.debug('Reset status to None.')
+            except KeyError:
+                # No change to indicator
+                pass
+            
+            try:
+                brightness = args['brightness']
+                self.indi_device.set_brightness(brightness)
+            except KeyError:
+                # No change to brightness
+                pass
+            
+            # Deal with new echo details
+            if set(args.keys()).intersection(set(['user', 'pass', 'ip'])):
+                self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
+                if not self.echo_device.connection_test.success():
+                    # Failed to connect
+                    logger.error('Something went wrong connecting to echo box.')
+                    logger.debug(self.echo_device.connection_test)
+                    raise EchoError('Unable to connect.')
+        
+        if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
+            logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+        return CONFIG
     
     def run(self, config_file_entered = None, log_file_entered = None):
         
