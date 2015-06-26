@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """Module for delcom status lights.
 
 Author: Robert Walker <rrah99@gmail.com>

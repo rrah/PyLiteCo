@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """Package __init__, exposes function to get required device.
 
 Author: Robert Walker <rrah99@gmail.com>

@@ -1,7 +1,4 @@
-#!/usr/bin/python
-
-"""
-Main launcher for pyliteco
+"""Main launcher for pyliteco.
 
 Author: Robert Walker <rrah99@gmail.com>
 

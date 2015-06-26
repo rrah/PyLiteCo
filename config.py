@@ -1,5 +1,4 @@
-"""
-Deal with config getting/parsing etc.
+"""Deal with config getting/parsing etc.
 
 Author: Robert Walker <rrah99@gmail.com>
 
