@@ -167,10 +167,29 @@ def get_echo_ip():
 
 def get_light_state_config():
     
+    """Get the configuration to map echo box states to light states
+    from the config server.
+    
+    Arguements:
+        None.
+        
+    Returns:
+        Light state config in data structure.
+    """
+    
     return json.loads(_get_file(PROTOCOL + '://' + SERVER + "?config"))
 
 
 def get_echo_config():
+    
+    """Get the full config from the config server.
+    
+    Arguements:
+        None
+        
+    Returns:
+        Configuration data structure.
+    """
     
     config = get_light_state_config()
     config.update({'ip': 'https://' + get_echo_ip()})

@@ -78,8 +78,18 @@ def get_light_action(config_json, device):
     
 def check_status(echo_device, indi_device, config, state_old = None):
     
+    """Connect to echo box and check state. Do appropriate things based
+    on the state.
+    
+    Arguements:
+        echo_device: Echo box object to check state of.
+        indi_device: Indicator device to display state on.
+        config: Current configuration object.
+        state_old (string): Previous state of echo box.
+    
+    Returns:
+        State of echo box, as string.
     """
-    Connect to echo box and check state"""
     
     state_string = echo_device.capture_status_str()
     logger.debug(state_string)
@@ -101,6 +111,18 @@ def check_status(echo_device, indi_device, config, state_old = None):
 
 def check_button_status(indi_device, echo_device, state = None):
     
+    """Look at the indicator and check if it's been pressed.
+    Then take appropriate action.
+    
+    Arguements:
+        indi_device: Indicator object to check status on.
+        echo_device: Echo box object to update if button is pressed.
+        state: The current state (as known to the program) of the echo box
+        
+    Returns:
+        None
+    """
+    
     if indi_device.read_switch():
         logger.debug('Button pressed while in state {}'.format(state))
         if state == 'active':
@@ -111,39 +133,51 @@ def check_button_status(indi_device, echo_device, state = None):
             echo_device.capture_record()
 
 
-class Main_Thread():
+class Main_Thread(object):
     
-    """Thing that does the main running."""
+    """Thing that does the main running.
+    
+    Class Attributes:
+        running (bool): Whether the thread is running or not.
+        
+    Instance Attributes:
+        arguements (dict): The arguemenets passed into the constructor.
+        
+    Methods:
+        is_running: Check whether the thread is running.
+        load_config: Get the configuration from file/server.
+        run: The loop to execute while thread is running.
+        start: Set the thread going.
+        stop: Signal to stop the thread.
+    """
     
     running = False
     
-    def __init__(self, config_file, log_file):
-        self.arguments = {"config_file_entered":config_file,
-                          "log_file_entered":log_file}
+    def __init__(self, config_file):
         
-    def start(self):
-        self.running = True
-        self.run(**self.arguments)
+        """Construct the thread with required arguements.
+        
+        Arguements:
+            config_file (string): Location of the local config file.
+            
+        Returns:
+            None.
+        """
+        
+        self.arguments = {"config_file_entered":config_file}
         
     def is_running(self):
         
         """Check whether the thread should be running.
         
+        Arguements:
+            None.
+        
         Returns:
-            True if running, else false
+            True if running, else false.
         """
         
         return self.running
-    
-    def stop(self):
-        
-        """Set attribute so thread stops running.
-        
-        Returns:
-            None
-        """
-        
-        self.running = False
         
     def load_config(self, file_ = 'config.json', old_config = None):
     
@@ -204,15 +238,21 @@ class Main_Thread():
             logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
         return CONFIG
     
-    def run(self, config_file_entered = None, log_file_entered = None):
+    def run(self, config_file_entered = None):
         
-        log_file = 'pyliteco.log'
+        """The main loop for running.
+        
+        Arguements:
+            config_file_entered (string): Location of local config file.
+            
+        Returns:
+            None.
+        """
+        
         config_file = 'pyliteco.json'
         
         if config_file_entered is not None:
             config_file = config_file_entered
-        if log_file_entered is not None:
-            log_file = log_file_entered
         
         
         # Loading of the config
@@ -297,3 +337,32 @@ class Main_Thread():
             except:
                 logger.exception('Error closing indicator device.')
             logger.info('Exiting')
+        
+    def start(self):
+        
+        """Set off the thread running.
+        
+        Arguements:
+            None.
+            
+        Returns:
+            None.
+        """
+        
+        self.running = True
+        self.run(**self.arguments)
+        
+    def stop(self):
+        
+        """Set attribute so thread stops running.
+        
+        Arguements:
+            None.
+            
+        Returns:
+            None.
+        """
+        
+        self.running = False
+        
+    

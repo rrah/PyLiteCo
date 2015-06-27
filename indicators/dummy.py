@@ -27,7 +27,21 @@ logger = logging.getLogger(__name__)
 
 class Device(indicators.indicator.Indicator):
     
-    """Pretends to be an indicator so stuff can be tested."""
+    """Pretends to be an indicator so stuff can be tested.
+    
+    Class attributes:
+        None.
+        
+    Instance attributes:
+        None.
+    
+    Methods:
+        flashing_start: Pretend to start flashing.
+        flashing_stop: Pretend to stop flashing.
+        read_switch: Pretend to check button status.
+        set_brightness: Pretend to change the brightness.
+        set_light: Pretend to turn on/off a specific colour.
+    """
     
     def _report(self, msg):
         
@@ -40,28 +54,36 @@ class Device(indicators.indicator.Indicator):
         Arguements:
             colours: Doesn't matter, ignored.
             flash_speed: Doesn't matter, ignored.
+            
+        Returns:
+            None.
         """
         
         self._report('Starting flashing')
         
     def flashing_stop(self):
         
-        """Report the end of flashing."""
+        """Report the end of flashing.
+        
+        Arguements:
+            None.
+            
+        Returns:
+            None.
+        """
         
         self._report('Stopping flashing')
-        
-    def set_light(self, colour):
-        
-        """Report the setting of a colour."""
-        
-        self._report('Set to {}'.format(colour))
         
     def read_switch(self):
         
         """Never gonna give you UP, never gonna let you DOWN.
         
+        Arguements:
+            None.
+        
         Return:
-            False. Always."""
+            False. Always.
+        """
         
         return False
     
@@ -77,3 +99,16 @@ class Device(indicators.indicator.Indicator):
         """
         
         pass
+        
+    def set_light(self, colour):
+        
+        """Report the setting of a colour.
+        
+        Arguements:
+            colour (string): Anything, is ignored.
+            
+        Returns:
+            None.
+        """
+        
+        self._report('Set to {}'.format(colour))

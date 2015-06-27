@@ -88,8 +88,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         
         logger.info('Starting up')
         
-        self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json", 
-                                           "C:\Program Files (x86)\pyliteco\pyliteco.log")
+        self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json")
         self.thread.start()
 
 if __name__ == '__main__':

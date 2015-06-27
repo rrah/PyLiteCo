@@ -41,6 +41,5 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Start the pyliteco program")
     parser.add_argument('-c', dest = 'config_file', default = None, metavar = 'Config file')
-    parser.add_argument('-l', dest = 'log_file', default = None, metavar = 'Log file')
     thread = pyliteco.Main_Thread(**vars(parser.parse_args()))
     thread.start()
