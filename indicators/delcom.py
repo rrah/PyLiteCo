@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """Module for delcom status lights.
 
 Author: Robert Walker <rrah99@gmail.com>
@@ -27,7 +25,30 @@ import pywinusb.hid as hid
 
 class Device(indicators.indicator.Indicator):
     
-    """Delcom Products generation 2 USB device class."""
+    """Delcom Products generation 2 USB device class.
+    
+    Class attributes:
+        _colour_pins (dict): Mapping of colours to pins on device.
+        allowed_colours (dict): The colours allowed by this device.
+        PRODUCT_ID: Specific indicator id.
+        VENDOR_ID: Delcom vendor id.
+    
+    Instance attributes:
+        _current_colour: Which colour is currently on.
+        _flashing_pin: Which pin is currently set to flashing.
+        device: Pywinusb device for the indicator.
+        
+    Methods:
+        flashing_start: Start the indicator flashing.
+        flashing_stop: Stop the indicator flashing.
+        read_switch: See if the button has been pressed.
+        set_brightness: Change the brightness of the LED's
+        set_light: Turn on/off the specified colour.
+        set_light_green: Turn on the green LED's.
+        set_light_off: Turn off the LED's.
+        set_light_red: Turn on the red LED's.
+        set_light_yellow: Turn on the yellow LED's.
+    """
 
     # Device Constants
     VENDOR_ID       = 0x0FC5    
@@ -47,8 +68,15 @@ class Device(indicators.indicator.Indicator):
     
 
     def __init__(self):
-        '''
-        Constructor'''
+        
+        """Constructor.
+        
+        Arguements:
+            None.
+            
+        Returns:
+            None.
+        """
         
         # Set some default attributes
         self._flashing_pin = None
@@ -68,8 +96,14 @@ class Device(indicators.indicator.Indicator):
     
     def _force_off(self):
         
+        """Make sure flashing/LEDs are definitely turned off.
+        
+        Arguements:
+            None
+            
+        Returns:
+            None
         """
-        Make sure flashing/LEDs are definitely turned off"""
         
         self._write_data(self._make_packet(101, 0x0c, 0, 0xFF))
         self._write_data(self._make_packet(101, 20, 1))
@@ -115,6 +149,12 @@ class Device(indicators.indicator.Indicator):
         
         """Check if a pin is actually flashing, and if so
         turn it off and turn off flashing.
+        
+        Arguements:
+            None
+        
+        Returns:
+            None
         """
         
         if self._flashing_pin is not None:
@@ -124,6 +164,19 @@ class Device(indicators.indicator.Indicator):
 
     def _make_packet(self, maj_cmd, min_cmd, lsb = 0x00, msb = 0x00):
         
+        """Put together a packet to be sent to the device. Pads out packet
+        with 0x00 to get it to required size.
+        
+        Arguements:
+            maj_cmd (byte): Major command, as defined in Delcom datasheet.
+            min_cmd (byte): Minor command, as defined in Delcom datasheet.
+            lsb (byte): Least significant byte for data payload.
+            msb (byte): Most significant byte for data payload.
+        
+        Returns:
+            List of 8 bytes, which constitutes a packet.
+        """
+        
         return [maj_cmd, min_cmd, lsb, msb, 0x00, 0x00, 0x00, 0x00]
 
     def set_brightness(self, brightness):
@@ -131,13 +184,24 @@ class Device(indicators.indicator.Indicator):
         """Change brightness of LED's.
         
         Arguements:
-            brightness (int): Brightness value between 0 and 100.
-                                Below 10 causes flashing
+            brightness (int): Brightness value between 0 and 100. Below 10 causes flickering.
+        
+        Returns:
+            None
         """
         
         self._set_pwr(brightness)
 
     def _set_pwr(self, pwr):
+        
+        """Do the low-level sending of data to change brightness.
+        
+        Arguements:
+            pwr (int): Brightness value between 0 and 100.
+            
+        Returns:
+            None
+        """
         
         pwr = int(pwr)
         if pwr > 100:
@@ -149,6 +213,15 @@ class Device(indicators.indicator.Indicator):
         self._write_data(self._make_packet(101, 34, 2, pwr))
         
     def _write_data(self, data):
+        
+        """Send data to the device.
+        
+        Arguements:
+            data (list): list of bytes to send, in the form returned by _make_packet.
+            
+        Returns:
+            None.
+        """
 
         for report in self.device.find_feature_reports():
             if report.report_id == data[0]:
@@ -158,6 +231,9 @@ class Device(indicators.indicator.Indicator):
     def read_switch(self):
     
         """See if the button has been pressed.
+        
+        Arguements:
+            None.
         
         Return: 
             True if pressed, False otherwise.
@@ -180,6 +256,15 @@ class Device(indicators.indicator.Indicator):
             return False
 
     def _read_data(self, cmd):
+        
+        """Get data from the device with the relevant command.
+        
+        Arguements:
+            cmd (int): Command to read, as defined in Delcom datasheet.
+            
+        Returns:
+            Data, as list of bytes.
+        """
 
         reports = self.device.find_feature_reports()
         for report in reports:
@@ -188,6 +273,15 @@ class Device(indicators.indicator.Indicator):
 
 
     def _get_current_colour(self):
+        
+        """Check what the current colour is.
+        
+        Arguements:
+            None.
+            
+        Returns:
+            Current colour (string).
+        """
         
         return self._current_colour
     
@@ -249,12 +343,6 @@ class Device(indicators.indicator.Indicator):
         """Set the LED's to yellow."""
         
         return self.set_light('yellow')
-        
-    def set_light_blue(self):
-        
-        """Set the LED's to blue."""
-        
-        return self.set_light('blue')
         
     def set_light_green(self):
         
