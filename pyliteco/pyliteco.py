@@ -201,7 +201,6 @@ class Main_Thread(threading.Thread):
             for thing in CONFIG.keys():
                 try:
                     if old_config[thing] != CONFIG[thing]:
-                        print((old_config[thing], CONFIG[thing]))
                         args[thing] = CONFIG[thing]
                 except KeyError:
                     # Not in old config, so a change

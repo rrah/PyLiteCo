@@ -126,8 +126,7 @@ def get_config(file_ = 'config.json', url = "http://example.com"):
         logger.warning('Cannot reach config server. Using default settings.')
         CONFIG.update(DEFAULT_CONFIG_JSON)
     except EchoipError:
-        logger.warning('Config server refused to return details. Check config server details.\r\n' +
-                        '\tUsing default config.')
+        logger.warning('Config server refused to return details - check config server details.Using default config.')
         CONFIG.update(DEFAULT_CONFIG_JSON)
     except KeyError:
         logger.warning('Can\'t find server URL in config, using default server settings.')
@@ -149,7 +148,7 @@ def _get_file(url):
     """
     
     file_ = urllib.request.urlopen(url).read().decode("utf-8")
-    if file_ == '404' or file_ == '':
+    if file_ == '404' or file_ == '' or '<html>' in file_:
         raise EchoipError('Server returned 404')
     else:
         return file_
