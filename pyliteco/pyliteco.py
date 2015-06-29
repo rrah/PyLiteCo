@@ -1,4 +1,4 @@
-"""Looks at echo box and changes light depending on state
+"""Looks at echo box and changes light depending on state.
 
 Author: Robert Walker <rrah99@gmail.com>
 
@@ -26,6 +26,7 @@ import logging.handlers
 import sys
 import threading
 import pywintypes
+import datetime
 from time import sleep
 import urllib2
 
@@ -33,6 +34,7 @@ import urllib2
 import config
 import echo360.capture_device as echo
 import indicators
+import watchdog
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +135,7 @@ def check_button_status(indi_device, echo_device, state = None):
             echo_device.capture_record()
 
 
-class Main_Thread(object):
+class Main_Thread(threading.Thread):
     
     """Thing that does the main running.
     
@@ -153,7 +155,7 @@ class Main_Thread(object):
     
     running = False
     
-    def __init__(self, config_file):
+    def __init__(self, kwargs = None):
         
         """Construct the thread with required arguements.
         
@@ -163,8 +165,9 @@ class Main_Thread(object):
         Returns:
             None.
         """
-        
-        self.arguments = {"config_file_entered":config_file}
+        threading.Thread.__init__(self, kwargs = kwargs)
+        self.daemon = True
+        self.arguments = kwargs
         
     def is_running(self):
         
@@ -217,7 +220,7 @@ class Main_Thread(object):
             except KeyError:
                 # No change to indicator
                 pass
-            
+                
             try:
                 brightness = args['brightness']
                 self.indi_device.set_brightness(brightness)
@@ -238,6 +241,23 @@ class Main_Thread(object):
             logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
         return CONFIG
     
+    def quit(self):
+        
+        """Forcibly stop the thread.
+        
+        Arguements:
+            None.
+        
+        Returns:
+            None.
+        """
+        
+        try:
+            del self.indi_device
+        except:
+            logger.exception('Error closing indicator device.')
+        logger.info('Exiting')
+    
     def run(self, config_file_entered = None):
         
         """The main loop for running.
@@ -249,6 +269,7 @@ class Main_Thread(object):
             None.
         """
         
+        watchdog.watchdog_queue.put(datetime.datetime.now())
         config_file = 'pyliteco.json'
         
         if config_file_entered is not None:
@@ -259,69 +280,77 @@ class Main_Thread(object):
         CONFIG = self.load_config(config_file)
 
         try:
-            # Initialise some variables
-            error_flash = False
-            
-            # And the indicator device
-            self.indi_device = indicators.get_device(CONFIG['indicator'])()
-            try:
-                self.indi_device.set_brightness(CONFIG['brightness'])
-            except KeyError:
-                # No brightness in config, use device default
-                pass
-            
-            # Loop until connection
             while self.is_running():
-                # Reload config
+                watchdog.watchdog_queue.put(datetime.datetime.now())
+                # Initialise some variables
+                error_flash = False
+                
+                # And the indicator device
                 try:
-                    CONFIG = self.load_config(config_file, CONFIG)
-                except EchoError:
-                    sleep(60)
+                    self.indi_device = indicators.get_device(CONFIG['indicator'])()
+                    try:
+                        self.indi_device.set_brightness(CONFIG['brightness'])
+                    except KeyError:
+                        # No brightness in config, use device default
+                        pass
+                except indicators.NoDeviceError:
+                    logger.error('Can not connect to device. Check config and check it is plugged in.')
+                    sleep(10)
                     continue
-                logger.debug(CONFIG)
-                
-                # Log echo ip
-                logger.info('Got echo url {}'.format(CONFIG['ip']))
-                
-                # Try to connect
-                self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
-                if not self.echo_device.connection_test.success():
-                    # Failed to connect, will try again
-                    logger.error('Something went wrong connecting to echo box. Will try again in a minute')
-                    logger.debug(self.echo_device.connection_test)
+                # Loop until connection
+                while self.is_running():
+                    watchdog.watchdog_queue.put(datetime.datetime.now())
+                    # Reload config
+                    try:
+                        CONFIG = self.load_config(config_file, CONFIG)
+                    except EchoError:
+                        sleep(60)
+                        continue
+                    logger.debug(CONFIG)
                     
-                    # Check if currently doing error flash and 
-                    if not error_flash:
-                        get_light_action(CONFIG['error'], self.indi_device)
-                        error_flash = True
-                    sleep(60)
-                else:
-                    # Connected, so (re)set some more variables
-                    error_flash = False
-                    self.state = None
-                    count = 0
+                    # Log echo ip
+                    logger.info('Got echo url {}'.format(CONFIG['ip']))
                     
-                    # And loop for status
-                    while self.is_running():
-                        try:
-                            if count < 60:
-                                count += 1
-                            else:
-                                logger.debug('Reloading config')
-                                CONFIG = self.load_config(config_file, CONFIG)
-                                count = 0
-                            self.state = check_status(self.echo_device, self.indi_device, CONFIG, self.state)
-                            check_button_status(self.indi_device, self.echo_device, self.state)
-                        except EchoError:
-                            break
-                        except IndexError:
-                            logger.exception('Bad message - lost connection')
-                        except KeyboardInterrupt:
-                            raise KeyboardInterrupt
-                        except:
-                            logger.exception('Something went a little wrong. Continuing loop')
-                        finally:
-                            sleep(1) # Stop the thrashing
+                    # Try to connect
+                    self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
+                    if not self.echo_device.connection_test.success():
+                        # Failed to connect, will try again
+                        logger.error('Something went wrong connecting to echo box. Will try again in a minute')
+                        logger.debug(self.echo_device.connection_test)
+                        
+                        # Check if currently doing error flash and 
+                        if not error_flash:
+                            get_light_action(CONFIG['error'], self.indi_device)
+                            error_flash = True
+                        sleep(60)
+                    else:
+                        # Connected, so (re)set some more variables
+                        error_flash = False
+                        self.state = None
+                        count = 0
+                        
+                        # And loop for status
+                        while self.is_running():
+                            watchdog.watchdog_queue.put(datetime.datetime.now())
+                            try:
+                                if count < 60:
+                                    count += 1
+                                else:
+                                    logger.debug('Reloading config')
+                                    CONFIG = self.load_config(config_file, CONFIG)
+                                    count = 0
+                                self.state = check_status(self.echo_device, self.indi_device, CONFIG, self.state)
+                                check_button_status(self.indi_device, self.echo_device, self.state)
+                            except EchoError:
+                                break
+                            except IndexError:
+                                logger.exception('Bad message - lost connection')
+                            except KeyboardInterrupt:
+                                raise KeyboardInterrupt
+                            except:
+                                logger.exception('Something went a little wrong. Continuing loop')
+                            finally:
+                                sleep(1) # Stop the thrashing
                         
         except KeyboardInterrupt:
             # Someone wants to escape!
@@ -330,27 +359,12 @@ class Main_Thread(object):
             logger.exception(None)
             sys.exit(1)
         finally:
-            # Bit of cleaning up as delcom throws 
-            # some other threads around
-            try:
-                del self.indi_device
-            except:
-                logger.exception('Error closing indicator device.')
-            logger.info('Exiting')
-        
-    def start(self):
-        
-        """Set off the thread running.
-        
-        Arguements:
-            None.
+            self.quit()
             
-        Returns:
-            None.
-        """
+    def start(self, *args, **kwargs):
         
         self.running = True
-        self.run(**self.arguments)
+        threading.Thread.start(self, *args, **kwargs)
         
     def stop(self):
         

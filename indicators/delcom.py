@@ -19,8 +19,10 @@ Copyright (C) 2015 Robert Walker
 """
 
 # Imports
+import indicators
 import indicators.indicator
 import pywinusb.hid as hid
+
 
 
 class Device(indicators.indicator.Indicator):
@@ -83,7 +85,10 @@ class Device(indicators.indicator.Indicator):
         self._current_colour = 'off'
         
         filter = hid.HidDeviceFilter(vendor_id = self.VENDOR_ID, product_id = self.PRODUCT_ID)
-        self.device = filter.get_devices()[0]
+        try:
+            self.device = filter.get_devices()[0]
+        except IndexError:
+            raise indicators.NoDeviceError
         
         self.device.open()
         
@@ -360,9 +365,13 @@ class Device(indicators.indicator.Indicator):
         
         """Stop any flashing and set the light to off at destruction."""
         
-        self.flashing_stop()
-        self.set_light_off()
-        self.device.close()
+        try:
+            self.flashing_stop()
+            self.set_light_off()
+            self.device.close()
+        except AttributeError:
+            # Device wasn't created succesfully
+            pass
 
 
 if __name__ == '__main__':
