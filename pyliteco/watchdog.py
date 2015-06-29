@@ -72,6 +72,8 @@ class Watchdog_Thread(object):
                 self.pyliteco_thread.quit()
                 self.pyliteco_thread = pyliteco.Main_Thread(kwargs = self._args)
                 self.pyliteco_thread.start()
+        self.pyliteco_thread.running = False
+        self.pyliteco_thread.join()
         logger.info('Closing watchdog thread')
         
     def start(self):

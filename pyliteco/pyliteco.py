@@ -257,7 +257,7 @@ class Main_Thread(threading.Thread):
             del self.indi_device
         except:
             logger.exception('Error closing indicator device.')
-        logger.info('Exiting')
+        logger.info('Closed pyliteco thread.')
     
     def main_loop(self, config_file_entered = None):
         
