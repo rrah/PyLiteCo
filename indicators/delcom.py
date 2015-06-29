@@ -233,7 +233,7 @@ class Device(indicators.indicator.Indicator):
 
         for report in self.device.find_feature_reports():
             if report.report_id == data[0]:
-                report[4278190083L] = data[1:]
+                report[4278190083] = data[1:]
                 report.send()
 
     def read_switch(self):

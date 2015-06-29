@@ -20,7 +20,8 @@ Copyright (C) 2015 Robert Walker
 
 import json
 import logging
-import urllib2
+import urllib.error
+import urllib.request
 
 
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ def get_config(file_ = 'config.json', url = "http://example.com"):
     
     try:
         CONFIG.update(get_echo_config(CONFIG['server']))
-    except urllib2.URLError:
+    except urllib.error.URLError:
         logger.warning('Cannot reach config server. Using default settings.')
         CONFIG.update(DEFAULT_CONFIG_JSON)
     except EchoipError:
@@ -147,7 +148,7 @@ def _get_file(url):
         file_ (string): Body of the file.
     """
     
-    file_ = urllib2.urlopen(url).read()
+    file_ = urllib.request.urlopen(url).read().decode("utf-8")
     if file_ == '404' or file_ == '':
         raise EchoipError('Server returned 404')
     else:
@@ -197,4 +198,4 @@ def get_echo_config(server_url):
 
 
 if __name__ == '__main__':
-    print get_echo_config()
+    print(get_echo_config())
