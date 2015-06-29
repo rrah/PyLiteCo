@@ -78,6 +78,9 @@ class Device(indicators.indicator.Indicator):
             
         Returns:
             None.
+            
+        Raises:
+            NoDeviceError.
         """
         
         # Set some default attributes

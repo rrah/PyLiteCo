@@ -165,7 +165,8 @@ class Main_Thread(threading.Thread):
         Returns:
             None.
         """
-        threading.Thread.__init__(self, kwargs = kwargs)
+        
+        threading.Thread.__init__(self, target = self.main_loop, kwargs = kwargs)
         self.daemon = True
         self.arguments = kwargs
         
@@ -258,7 +259,7 @@ class Main_Thread(threading.Thread):
             logger.exception('Error closing indicator device.')
         logger.info('Exiting')
     
-    def run(self, config_file_entered = None):
+    def main_loop(self, config_file_entered = None):
         
         """The main loop for running.
         
