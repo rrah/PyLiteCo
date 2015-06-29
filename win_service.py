@@ -24,7 +24,7 @@ import win32serviceutil
 import win32service
 import win32event
 
-import pyliteco
+import pyliteco.pyliteco
 
 
 class pyliteco_svc (win32serviceutil.ServiceFramework):
@@ -88,7 +88,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         
         logger.info('Starting up')
         
-        self.thread = pyliteco.Main_Thread("C:\Program Files (x86)\pyliteco\pyliteco.json")
+        self.thread = pyliteco.watchdog.Watchdog_Thread(config_file_entered = "C:\Program Files (x86)\pyliteco\pyliteco.json")
         self.thread.start()
 
 if __name__ == '__main__':

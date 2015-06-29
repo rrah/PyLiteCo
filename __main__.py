@@ -19,7 +19,7 @@ Copyright (C) 2015 Robert Walker
 """
 
 import logging
-import pyliteco
+import pyliteco.watchdog
 import sys
 
 
@@ -40,6 +40,6 @@ if __name__ == '__main__':
     import argparse
     
     parser = argparse.ArgumentParser("Start the pyliteco program")
-    parser.add_argument('-c', dest = 'config_file', default = None, metavar = 'Config file')
-    thread = pyliteco.Main_Thread(**vars(parser.parse_args()))
+    parser.add_argument('-c', dest = 'config_file_entered', default = None, metavar = 'Config file')
+    thread = pyliteco.watchdog.Watchdog_Thread(**vars(parser.parse_args()))
     thread.start()

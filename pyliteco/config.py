@@ -26,22 +26,19 @@ import urllib2
 logger = logging.getLogger(__name__)
 
 
-SERVER = 'yorkie.york.ac.uk/echolight.php'
-"""URL (without protocol) for the config server"""
-PROTOCOL = 'http'
-"""Protocol for connecting to the config server"""
 EXAMPLE_CONFIG = '\
 {\
     "user": "user",\
     "pass": "pass",\
     "indicator": "dummy",\
     "logging": "INFO",\
-    "brightness": "50"\
+    "brightness": "50",\
+    "server": "http://example.com"\
 }'
 """Config normally stored locally. Used to generate local file if none found."""
 DEFAULT_CONFIG = '''
 {
-    "ip": "127.0.0.1",
+    "ip": "http://127.0.0.1",
     "active": {
             "colour": "red",
             "flash": false,
@@ -99,7 +96,7 @@ class BadConfigError(Exception):
     def __str__(self):
         return 'Check format of config file.'
 
-def get_config(file_ = 'config.json', url = PROTOCOL + '://' + SERVER):
+def get_config(file_ = 'config.json', url = "http://example.com"):
     
     """Get the config from the file and from the server.
     
@@ -123,13 +120,16 @@ def get_config(file_ = 'config.json', url = PROTOCOL + '://' + SERVER):
         raise BadConfigError()
     
     try:
-        CONFIG.update(get_echo_config())
+        CONFIG.update(get_echo_config(CONFIG['server']))
     except urllib2.URLError:
         logger.warning('Cannot reach config server. Using default settings.')
         CONFIG.update(DEFAULT_CONFIG_JSON)
     except EchoipError:
         logger.warning('Config server refused to return details. Check config server details.\r\n' +
                         '\tUsing default config.')
+        CONFIG.update(DEFAULT_CONFIG_JSON)
+    except KeyError:
+        logger.warning('Can\'t find server URL in config, using default server settings.')
         CONFIG.update(DEFAULT_CONFIG_JSON)
     
     return CONFIG
@@ -154,7 +154,7 @@ def _get_file(url):
         return file_
 
 
-def get_echo_ip():
+def get_echo_ip(server_url):
     
     """Get the IP this indicator should be looking at.
     
@@ -162,10 +162,10 @@ def get_echo_ip():
         ip (string): String containing the IP
     """
     
-    return _get_file(PROTOCOL + '://' + SERVER)
+    return _get_file(server_url)
 
 
-def get_light_state_config():
+def get_light_state_config(server_url):
     
     """Get the configuration to map echo box states to light states
     from the config server.
@@ -177,10 +177,10 @@ def get_light_state_config():
         Light state config in data structure.
     """
     
-    return json.loads(_get_file(PROTOCOL + '://' + SERVER + "?config"))
+    return json.loads(_get_file(server_url + "?config"))
 
 
-def get_echo_config():
+def get_echo_config(server_url):
     
     """Get the full config from the config server.
     
@@ -191,8 +191,8 @@ def get_echo_config():
         Configuration data structure.
     """
     
-    config = get_light_state_config()
-    config.update({'ip': 'https://' + get_echo_ip()})
+    config = get_light_state_config(server_url)
+    config.update({'ip': 'https://' + get_echo_ip(server_url)})
     return config
 
 
