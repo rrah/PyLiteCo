@@ -154,11 +154,9 @@ py2exe_options = dict(
 # Some options can be overridden by command line options...
 
 setup(name="name",
-      # console based executables
-      console=[win_service],
 
       # windows subsystem executables (no console)
-      windows=[],
+      windows=[win_service],
 
       # py2exe options
       zipfile=None,
