@@ -156,7 +156,7 @@ py2exe_options = dict(
 setup(name="name",
 
       # windows subsystem executables (no console)
-      windows=[win_service],
+      console=[win_service],
 
       # py2exe options
       zipfile=None,
