@@ -21,6 +21,7 @@ Copyright (C) 2015 Robert Walker
 # Imports
 import indicators
 import indicators.indicator
+import pywinusb
 import pywinusb.hid as hid
 
 

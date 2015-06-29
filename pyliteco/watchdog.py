@@ -70,7 +70,7 @@ class Watchdog_Thread(object):
                 # Nothing's been added to the queue in 10 seconds, thread has hung
                 logger.warning('pyliteco thread hung, restarting.')
                 self.pyliteco_thread.quit()
-                self.pyliteco_thread = pyliteco.Main_Thread(kwargs = self._args)
+                self.pyliteco_thread = pyliteco.pyliteco.Main_Thread(kwargs = self._args)
                 self.pyliteco_thread.start()
         self.pyliteco_thread.running = False
         self.pyliteco_thread.join()
