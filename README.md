@@ -22,10 +22,10 @@ This will run pyliteco as a Windows service, logging to the Event Log, starting 
  - Also ensure the server has port 80 accessable from each client you will install the service on to.
  
  
- <h2> Building from source </h2>
+<h2> Building from source </h2>
  
- PyLiteCo requires Python3, Pywinusb and Pywin32 to run. To additionally build the exe andinstaller, py2exe and NSIS are required. 
+PyLiteCo requires Python3, Pywinusb and Pywin32 to run. To additionally build the exe andinstaller, py2exe and NSIS are required. 
 If just running the Python script, run <code>python3 \_\_main\_\_.py <path_to_local_config_file></code>
  
- <h2> Bug reporting </h2>
- Please use the <a href="https://github.com/rrah/PyLiteCo/issues">Github repo issues feature</a>, making sure to include the log file generated. If running as a service, the log entries will appear in the Windows Event Log.
+<h2> Bug reporting </h2>
+Please use the <a href="https://github.com/rrah/PyLiteCo/issues">Github repo issues feature</a>, making sure to include the log file generated. If running as a service, the log entries will appear in the Windows Event Log.
