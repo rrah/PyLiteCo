@@ -200,7 +200,8 @@ class Main_Thread(threading.Thread):
             args = {}
             for thing in CONFIG.keys():
                 try:
-                    if old_config[thing] == CONFIG[thing]:
+                    if old_config[thing] != CONFIG[thing]:
+                        print((old_config[thing], CONFIG[thing]))
                         args[thing] = CONFIG[thing]
                 except KeyError:
                     # Not in old config, so a change
@@ -238,7 +239,7 @@ class Main_Thread(threading.Thread):
                     raise EchoError('Unable to connect.')
         
         if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-            logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+            logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
         return CONFIG
     
     def quit(self):
