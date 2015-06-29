@@ -18,15 +18,15 @@ Copyright (C) 2015 Robert Walker
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 import logging
-import pyliteco
-import Queue
+import pyliteco.pyliteco
+import queue
 import threading
 
 from time import sleep
 
 logger = logging.getLogger(__name__)
 
-watchdog_queue = Queue.Queue()
+watchdog_queue = queue.Queue()
 
 class Watchdog_Thread(object):
     
@@ -60,17 +60,17 @@ class Watchdog_Thread(object):
     def run(self):
         
         logger.info('Starting watchdog thread')
-        self.pyliteco_thread = pyliteco.Main_Thread(kwargs = self._args)
+        self.pyliteco_thread = pyliteco.pyliteco.Main_Thread(kwargs = self._args)
         self.pyliteco_thread.start()
         while self.is_running():
             try:
                 watchdog_queue.get(True, 100)
                 logger.debug('Got message from pyliteco thread.')
-            except Queue.Empty:
+            except queue.Empty:
                 # Nothing's been added to the queue in 10 seconds, thread has hung
                 logger.warning('pyliteco thread hung, restarting.')
                 self.pyliteco_thread.quit()
-                self.pyliteco_thread = pyliteco.Main_Thread(kwargs = self._args)
+                self.pyliteco_thread = pyliteco.pyliteco.Main_Thread(kwargs = self._args)
                 self.pyliteco_thread.start()
         self.pyliteco_thread.running = False
         self.pyliteco_thread.join()
