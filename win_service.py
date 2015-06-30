@@ -16,6 +16,7 @@ Copyright (C) 2015 Robert Walker
 """
 
 import logging
+import os
 import pythoncom
 import servicemanager
 import socket
@@ -79,6 +80,9 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
             None
         """
         
+        formatter_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        formatter = logging.Formatter(formatter_string)
+        logging.basicConfig(filename = '{}\pyliteco\pyliteco.log'.format(os.environ['PROGRAMFILES']), format = formatter_string)
         root = logging.getLogger()
         nthandler = logging.handlers.NTEventLogHandler('PyLiteCo')
         root.addHandler(nthandler)
@@ -89,7 +93,9 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         
         logger.info('Starting up')
         
-        self.thread = pyliteco.watchdog.Watchdog_Thread(config_file_entered = "C:\Program Files (x86)\pyliteco\pyliteco.json")
+        self.thread = pyliteco.watchdog.Watchdog_Thread(
+                    config_file_entered = '{}\pyliteco\pyliteco.json'.format(
+                                                    os.environ['PROGRAMFILES']))
         self.thread.start()
 
 if __name__ == '__main__':

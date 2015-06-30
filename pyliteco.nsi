@@ -19,7 +19,7 @@ Copyright (C) 2015 Robert Walker
 Name "pyliteco"
 Outfile "pyliteco-setup.exe"
 
-InstallDir "C:\Program Files (x86)\pyliteco"
+InstallDir "$PROGRAMFILES\pyliteco"
 
 
 RequestExecutionLevel admin
@@ -75,6 +75,7 @@ Section "uninstall"
 	delete "$INSTDIR\pyliteco.json"
 	delete "$INSTDIR\pyliteco-service.exe"
 	delete "$INSTDIR\README.md"
+	delete "$INSTDIR\pyliteco.log"
 
 	delete "$INSTDIR\uninstall.exe"
 
