@@ -28,13 +28,12 @@ import threading
 import pywintypes
 import datetime
 from time import sleep
-import urllib2
 
 # Local modules
-import config
+import pyliteco.config
 import echo360.capture_device as echo
 import indicators
-import watchdog
+import pyliteco.watchdog
 
 logger = logging.getLogger(__name__)
 
@@ -195,13 +194,13 @@ class Main_Thread(threading.Thread):
             Dict with configuration options.
         """
         
-        CONFIG = config.get_config(file_)
+        CONFIG = pyliteco.config.get_config(file_)
         
         if old_config is not None:
             args = {}
             for thing in CONFIG.keys():
                 try:
-                    if cmp(old_config[thing], CONFIG[thing]) != 0:
+                    if old_config[thing] != CONFIG[thing]:
                         args[thing] = CONFIG[thing]
                 except KeyError:
                     # Not in old config, so a change
@@ -239,7 +238,7 @@ class Main_Thread(threading.Thread):
                     raise EchoError('Unable to connect.')
         
         if CONFIG['logging'] in ['INFO', 'DEBUG', 'ERROR', 'WARNING']:
-            logging.getLogger(__name__).setLevel(eval('logging.{}'.format(CONFIG['logging'])))
+            logging.getLogger().setLevel(eval('logging.{}'.format(CONFIG['logging'])))
         return CONFIG
     
     def quit(self):
@@ -270,7 +269,7 @@ class Main_Thread(threading.Thread):
             None.
         """
         
-        watchdog.watchdog_queue.put(datetime.datetime.now())
+        pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
         config_file = 'pyliteco.json'
         
         if config_file_entered is not None:
@@ -282,7 +281,7 @@ class Main_Thread(threading.Thread):
 
         try:
             while self.is_running():
-                watchdog.watchdog_queue.put(datetime.datetime.now())
+                pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
                 # Initialise some variables
                 error_flash = False
                 
@@ -300,7 +299,7 @@ class Main_Thread(threading.Thread):
                     continue
                 # Loop until connection
                 while self.is_running():
-                    watchdog.watchdog_queue.put(datetime.datetime.now())
+                    pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
                     # Reload config
                     try:
                         CONFIG = self.load_config(config_file, CONFIG)
@@ -332,7 +331,7 @@ class Main_Thread(threading.Thread):
                         
                         # And loop for status
                         while self.is_running():
-                            watchdog.watchdog_queue.put(datetime.datetime.now())
+                            pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
                             try:
                                 if count < 60:
                                     count += 1

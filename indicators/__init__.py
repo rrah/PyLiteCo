@@ -39,10 +39,10 @@ def get_device(device):
     """
     
     if device == 'dummy':
-        import dummy
+        import indicators.dummy
         class USBError(Exception):
             pass
         return dummy.Device
     elif device == 'delcom':
-        import delcom
+        import indicators.delcom
         return delcom.Device

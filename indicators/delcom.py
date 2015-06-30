@@ -21,6 +21,7 @@ Copyright (C) 2015 Robert Walker
 # Imports
 import indicators
 import indicators.indicator
+import pywinusb
 import pywinusb.hid as hid
 
 
@@ -233,7 +234,7 @@ class Device(indicators.indicator.Indicator):
 
         for report in self.device.find_feature_reports():
             if report.report_id == data[0]:
-                report[4278190083L] = data[1:]
+                report[4278190083] = data[1:]
                 report.send()
 
     def read_switch(self):
