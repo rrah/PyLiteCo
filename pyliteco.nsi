@@ -86,7 +86,7 @@ Section "uninstall"
 	!insertmacro VerifyUserIsAdmin
 
 	# Stop and remove service
-	SimpleSC::StopService "pyliteco" '' 15
+	SimpleSC::StopService "pyliteco" '' 120
 	Execwait '"$INSTDIR\pyliteco-service.exe" remove'
 
 	# remove files

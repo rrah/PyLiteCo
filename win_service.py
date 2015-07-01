@@ -27,6 +27,7 @@ import win32event
 import win32timezone
 
 import pyliteco.pyliteco
+import pyliteco.version
 
 
 class pyliteco_svc (win32serviceutil.ServiceFramework):
@@ -91,7 +92,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         
         logger = logging.getLogger(__name__)
         
-        logger.info('Starting up')
+        logger.info('Starting up {}'.format(pyliteco.version.VERSION))
         
         self.thread = pyliteco.watchdog.Watchdog_Thread(
                     config_file_entered = '{}\pyliteco\pyliteco.json'.format(
