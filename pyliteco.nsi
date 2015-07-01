@@ -41,6 +41,7 @@ ${EndIf}
 
 
 !include LogicLib.nsh
+!include locate.nsh
 
 
 Section "install"
@@ -57,9 +58,26 @@ Section "install"
 	File "/oname=$0" "dist\win_service.exe"
 	Execwait '"$INSTDIR\pyliteco-service.exe" install'
 	SimpleSC::StartService "pyliteco" '' 15
-
+	
 	# Readme
 	File "README.md"
+	
+	${locate::GetSize} "$INSTDIR" "/S=Kb" $0 $1 $2
+	IntFmt $0 "0x%08X" $0
+	
+	# Registry for uninstaller
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"DisplayName" "PyLiteCo"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"InstallLocation" "$\"$INSTDIR$\""
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"NoModify" "1"
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"NoRepair" "1"
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"EstimatedSize" "$0"
 
 SectionEnd
 
@@ -76,6 +94,9 @@ Section "uninstall"
 	delete "$INSTDIR\pyliteco-service.exe"
 	delete "$INSTDIR\README.md"
 	delete "$INSTDIR\pyliteco.log"
+
+	# Remove registry entries
+	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco"
 
 	delete "$INSTDIR\uninstall.exe"
 
