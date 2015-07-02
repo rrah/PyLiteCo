@@ -27,7 +27,7 @@ import sys
 import threading
 import pywintypes
 import datetime
-from time import sleep
+import time
 
 # Local modules
 import pyliteco.config
@@ -169,6 +169,22 @@ class Main_Thread(threading.Thread):
         self.daemon = True
         self.arguments = kwargs
         
+    def _sleep(self, seconds):
+        
+        """Stop doing execution, but still check flags.
+        
+        Arguements:
+            seconds (int): How long to sleep for
+        
+        Returns:
+            None
+        """
+        
+        while seconds >=0 and self.is_running():
+            pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
+            seconds -= 1
+            time.sleep(1)
+    
     def is_running(self):
         
         """Check whether the thread should be running.
@@ -295,7 +311,7 @@ class Main_Thread(threading.Thread):
                         pass
                 except indicators.NoDeviceError:
                     logger.error('Can not connect to device. Check config and check it is plugged in.')
-                    sleep(10)
+                    self._sleep(10)
                     continue
                 # Loop until connection
                 while self.is_running():
@@ -304,7 +320,7 @@ class Main_Thread(threading.Thread):
                     try:
                         CONFIG = self.load_config(config_file, CONFIG)
                     except EchoError:
-                        sleep(60)
+                        self._sleep(60)
                         continue
                     logger.debug(CONFIG)
                     
@@ -322,7 +338,7 @@ class Main_Thread(threading.Thread):
                         if not error_flash:
                             get_light_action(CONFIG['error'], self.indi_device)
                             error_flash = True
-                        sleep(60)
+                        self._sleep(60)
                     else:
                         # Connected, so (re)set some more variables
                         error_flash = False
@@ -350,7 +366,7 @@ class Main_Thread(threading.Thread):
                             except:
                                 logger.exception('Something went a little wrong. Continuing loop')
                             finally:
-                                sleep(1) # Stop the thrashing
+                                self._sleep(1) # Stop the thrashing
                         
         except KeyboardInterrupt:
             # Someone wants to escape!
