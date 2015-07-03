@@ -19,7 +19,7 @@ Copyright (C) 2015 Robert Walker
 Name "pyliteco"
 Outfile "pyliteco-setup.exe"
 
-InstallDir "C:\Program Files (x86)\pyliteco"
+InstallDir "$PROGRAMFILES\pyliteco"
 
 
 RequestExecutionLevel admin
@@ -41,6 +41,7 @@ ${EndIf}
 
 
 !include LogicLib.nsh
+!include locate.nsh
 
 
 Section "install"
@@ -55,11 +56,28 @@ Section "install"
 	SetOutPath $INSTDIR
 	StrCpy $0 "pyliteco-service.exe"
 	File "/oname=$0" "dist\win_service.exe"
-	Execwait '"C:\Program Files (x86)\pyliteco\pyliteco-service.exe" install'
+	Execwait '"$INSTDIR\pyliteco-service.exe" install'
 	SimpleSC::StartService "pyliteco" '' 15
-
+	
 	# Readme
 	File "README.md"
+	
+	${locate::GetSize} "$INSTDIR" "/S=Kb" $0 $1 $2
+	IntFmt $0 "0x%08X" $0
+	
+	# Registry for uninstaller
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"DisplayName" "PyLiteCo"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"InstallLocation" "$\"$INSTDIR$\""
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"NoModify" "1"
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"NoRepair" "1"
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco" \
+					"EstimatedSize" "$0"
 
 SectionEnd
 
@@ -68,13 +86,17 @@ Section "uninstall"
 	!insertmacro VerifyUserIsAdmin
 
 	# Stop and remove service
-	SimpleSC::StopService "pyliteco" '' 15
-	Execwait '"C:\Program Files (x86)\pyliteco\pyliteco-service.exe" remove'
+	SimpleSC::StopService "pyliteco" '' 120
+	Execwait '"$INSTDIR\pyliteco-service.exe" remove'
 
 	# remove files
 	delete "$INSTDIR\pyliteco.json"
 	delete "$INSTDIR\pyliteco-service.exe"
 	delete "$INSTDIR\README.md"
+	delete "$INSTDIR\pyliteco.log"
+
+	# Remove registry entries
+	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pyliteco"
 
 	delete "$INSTDIR\uninstall.exe"
 

@@ -64,7 +64,7 @@ class Watchdog_Thread(object):
         self.pyliteco_thread.start()
         while self.is_running():
             try:
-                watchdog_queue.get(True, 100)
+                watchdog_queue.get(True, 10)
                 logger.debug('Got message from pyliteco thread.')
             except queue.Empty:
                 # Nothing's been added to the queue in 10 seconds, thread has hung

@@ -20,6 +20,7 @@ Copyright (C) 2015 Robert Walker
 
 import logging
 import pyliteco.watchdog
+import pyliteco.version
 import sys
 
 
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     root.addHandler(ch)
     
     logger = logging.getLogger(__name__)
-    logger.info('Starting up as app.')
+    logger.info('Starting up as app. v{}'.format(pyliteco.version.VERSION))
     
     import argparse
     
