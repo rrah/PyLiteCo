@@ -140,7 +140,7 @@ def _get_file(url):
     """Wrapper to grab a file and raise an exception if the file
     is not valid.
     
-    Arguements:
+    Arguments:
         url (string): URL to get the file from.
         
     Returns:
@@ -158,8 +158,11 @@ def get_echo_ip(server_url):
     
     """Get the IP this indicator should be looking at.
     
+    Arguments:
+        server_url (string): URL of the config server.
+    
     Returns:
-        ip (string): String containing the IP
+        ip (string): String containing the IP of the echo box.
     """
     
     return _get_file(server_url)
@@ -170,7 +173,7 @@ def get_light_state_config(server_url):
     """Get the configuration to map echo box states to light states
     from the config server.
     
-    Arguements:
+    Arguments:
         None.
         
     Returns:
@@ -184,8 +187,8 @@ def get_echo_config(server_url):
     
     """Get the full config from the config server.
     
-    Arguements:
-        None
+    Arguments:
+        None.
         
     Returns:
         Configuration data structure.

@@ -38,7 +38,7 @@ class Indicator(object):
         
         """Whatever code to make the indicator flash one or more colours.
         
-        Keyword arguements:
+        Arguments:
             flash_speed (int): Seconds to stay in each state.
             colours (list): Colours to flash between
                 
@@ -52,11 +52,11 @@ class Indicator(object):
         
         """Whatever code to make the indicator stop flashing.
         
-        Arguements:
-            None
+        Arguments:
+            None.
         
         Return:
-            None
+            None.
         """
         
         pass
@@ -66,11 +66,11 @@ class Indicator(object):
         """Return whether the switch/button/whatever has been pressed since
         last time this method was called.
         
-        Arguements:
-            None
+        Arguments:
+            None.
             
         Return:
-            True or False
+            True or False.
         """
         
         return False
@@ -81,11 +81,11 @@ class Indicator(object):
         'off' should be included as a valid colour, along with 'red', 'green'
         and 'yellow'.
         
-        Arguements:
+        Arguments:
             colour (string): The colour to light up.
         
         Return:
-            None
+            None.
         """
         
         pass

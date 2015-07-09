@@ -26,6 +26,7 @@ import logging.handlers
 import sys
 import threading
 import pywintypes
+import pywinusb.hid
 import datetime
 import time
 
@@ -49,7 +50,7 @@ def get_light_action(config_json, device):
     
     """Return the method to set the light to what the config file wants.
     
-    Arguements:
+    Arguments:
         config_json (dict): Dictionary containing information for the required light state.
         device (indicators.Device): LED device to set.
         
@@ -82,7 +83,7 @@ def check_status(echo_device, indi_device, config, state_old = None):
     """Connect to echo box and check state. Do appropriate things based
     on the state.
     
-    Arguements:
+    Arguments:
         echo_device: Echo box object to check state of.
         indi_device: Indicator device to display state on.
         config: Current configuration object.
@@ -115,7 +116,7 @@ def check_button_status(indi_device, echo_device, state = None):
     """Look at the indicator and check if it's been pressed.
     Then take appropriate action.
     
-    Arguements:
+    Arguments:
         indi_device: Indicator object to check status on.
         echo_device: Echo box object to update if button is pressed.
         state: The current state (as known to the program) of the echo box
@@ -158,7 +159,7 @@ class Main_Thread(threading.Thread):
         
         """Construct the thread with required arguements.
         
-        Arguements:
+        Arguments:
             config_file (string): Location of the local config file.
             
         Returns:
@@ -173,7 +174,7 @@ class Main_Thread(threading.Thread):
         
         """Stop doing execution, but still check flags.
         
-        Arguements:
+        Arguments:
             seconds (int): How long to sleep for
         
         Returns:
@@ -189,7 +190,7 @@ class Main_Thread(threading.Thread):
         
         """Check whether the thread should be running.
         
-        Arguements:
+        Arguments:
             None.
         
         Returns:
@@ -202,7 +203,7 @@ class Main_Thread(threading.Thread):
     
         """Get the config from the config file.
         
-        Arguements:
+        Arguments:
             file_ (string): Name of the file to load.
             old_config (dict): Old config to compare new one to.
             
@@ -261,13 +262,14 @@ class Main_Thread(threading.Thread):
         
         """Forcibly stop the thread.
         
-        Arguements:
+        Arguments:
             None.
         
         Returns:
             None.
         """
-        
+        if self.is_running():
+            self.stop()
         try:
             del self.indi_device
         except:
@@ -278,7 +280,7 @@ class Main_Thread(threading.Thread):
         
         """The main loop for running.
         
-        Arguements:
+        Arguments:
             config_file_entered (string): Location of local config file.
             
         Returns:
@@ -309,64 +311,61 @@ class Main_Thread(threading.Thread):
                     except KeyError:
                         # No brightness in config, use device default
                         pass
+                
+                    # Loop until connection
+                    while self.is_running():
+                        pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
+                        # Reload config
+                        try:
+                            CONFIG = self.load_config(config_file, CONFIG)
+                        except EchoError:
+                            self._sleep(60)
+                            continue
+                        logger.debug(CONFIG)
+                        
+                        # Log echo ip
+                        logger.info('Got echo url {}'.format(CONFIG['ip']))
+                        
+                        # Try to connect
+                        self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
+                        if not self.echo_device.connection_test.success():
+                            # Failed to connect, will try again
+                            logger.error('Something went wrong connecting to echo box. Will try again in a minute')
+                            logger.debug(self.echo_device.connection_test)
+                            
+                            # Check if currently doing error flash and 
+                            if not error_flash:
+                                get_light_action(CONFIG['error'], self.indi_device)
+                                error_flash = True
+                            self._sleep(60)
+                        else:
+                            # Connected, so (re)set some more variables
+                            error_flash = False
+                            self.state = None
+                            count = 0
+                            
+                            # And loop for status
+                            while self.is_running():
+                                pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
+                                try:
+                                    if count < 60:
+                                        count += 1
+                                    else:
+                                        logger.debug('Reloading config')
+                                        CONFIG = self.load_config(config_file, CONFIG)
+                                        count = 0
+                                    self.state = check_status(self.echo_device, self.indi_device, CONFIG, self.state)
+                                    check_button_status(self.indi_device, self.echo_device, self.state)
+                                except EchoError:
+                                    break
+                                except IndexError:
+                                    logger.exception('Bad message - lost connection to echo box.')
+                                finally:
+                                    self._sleep(1) # Stop the thrashing
                 except indicators.NoDeviceError:
                     logger.error('Can not connect to device. Check config and check it is plugged in.')
+                finally:
                     self._sleep(10)
-                    continue
-                # Loop until connection
-                while self.is_running():
-                    pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
-                    # Reload config
-                    try:
-                        CONFIG = self.load_config(config_file, CONFIG)
-                    except EchoError:
-                        self._sleep(60)
-                        continue
-                    logger.debug(CONFIG)
-                    
-                    # Log echo ip
-                    logger.info('Got echo url {}'.format(CONFIG['ip']))
-                    
-                    # Try to connect
-                    self.echo_device = echo.Echo360CaptureDevice(CONFIG['ip'], CONFIG['user'], CONFIG['pass'])
-                    if not self.echo_device.connection_test.success():
-                        # Failed to connect, will try again
-                        logger.error('Something went wrong connecting to echo box. Will try again in a minute')
-                        logger.debug(self.echo_device.connection_test)
-                        
-                        # Check if currently doing error flash and 
-                        if not error_flash:
-                            get_light_action(CONFIG['error'], self.indi_device)
-                            error_flash = True
-                        self._sleep(60)
-                    else:
-                        # Connected, so (re)set some more variables
-                        error_flash = False
-                        self.state = None
-                        count = 0
-                        
-                        # And loop for status
-                        while self.is_running():
-                            pyliteco.watchdog.watchdog_queue.put(datetime.datetime.now())
-                            try:
-                                if count < 60:
-                                    count += 1
-                                else:
-                                    logger.debug('Reloading config')
-                                    CONFIG = self.load_config(config_file, CONFIG)
-                                    count = 0
-                                self.state = check_status(self.echo_device, self.indi_device, CONFIG, self.state)
-                                check_button_status(self.indi_device, self.echo_device, self.state)
-                            except EchoError:
-                                break
-                            except IndexError:
-                                logger.exception('Bad message - lost connection')
-                            except KeyboardInterrupt:
-                                raise KeyboardInterrupt
-                            except:
-                                logger.exception('Something went a little wrong. Continuing loop')
-                            finally:
-                                self._sleep(1) # Stop the thrashing
                         
         except KeyboardInterrupt:
             # Someone wants to escape!
@@ -386,7 +385,7 @@ class Main_Thread(threading.Thread):
         
         """Set attribute so thread stops running.
         
-        Arguements:
+        Arguments:
             None.
             
         Returns:
