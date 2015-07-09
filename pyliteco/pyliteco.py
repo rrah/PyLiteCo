@@ -372,7 +372,6 @@ class Main_Thread(threading.Thread):
             pass
         except:
             logger.exception(None)
-            sys.exit(1)
         finally:
             self.quit()
             

@@ -235,6 +235,8 @@ class Device(indicators.indicator.Indicator):
             None.
         """
 
+        if not self.device.is_plugged():
+            raise indicators.NoDeviceError()
         for report in self.device.find_feature_reports():
             if report.report_id == data[0]:
                 report[4278190083] = data[1:]
@@ -257,7 +259,7 @@ class Device(indicators.indicator.Indicator):
                 raise indicators.NoDeviceError()
             try:
                 data = self._read_data(8)
-            except hid.HIDError:
+            except hid.HIDError as e:
                 # There might be a useful case to see these
                 logger.warning(e)
         if data[8:11] == [0, 0, 0]:
@@ -376,9 +378,10 @@ class Device(indicators.indicator.Indicator):
         """Stop any flashing and set the light to off at destruction."""
         
         try:
-            self.flashing_stop()
-            self.set_light_off()
-            self.device.close()
+            if self.device.is_open():
+                self.flashing_stop()
+                self.set_light_off()
+                self.device.close()
         except AttributeError:
             # Device wasn't created succesfully
             pass
