@@ -22,8 +22,8 @@ import argparse
 
 
 maj_ver = 1
-min_ver = 3
-patch_ver = 5
+min_ver = 4
+patch_ver = 0
 rc_ver = 1
 
 VERSION = '{}.{}.{}'.format(maj_ver, min_ver, patch_ver)
