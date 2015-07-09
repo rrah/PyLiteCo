@@ -51,7 +51,7 @@ class Device(indicators.indicator.Indicator):
         
         """Report the start of flashing.
         
-        Arguements:
+        Arguments:
             colours: Doesn't matter, ignored.
             flash_speed: Doesn't matter, ignored.
             
@@ -65,7 +65,7 @@ class Device(indicators.indicator.Indicator):
         
         """Report the end of flashing.
         
-        Arguements:
+        Arguments:
             None.
             
         Returns:
@@ -78,7 +78,7 @@ class Device(indicators.indicator.Indicator):
         
         """Never gonna give you UP, never gonna let you DOWN.
         
-        Arguements:
+        Arguments:
             None.
         
         Return:
@@ -91,7 +91,7 @@ class Device(indicators.indicator.Indicator):
         
         """Baby, you light up my world.
         
-        Arguements:
+        Arguments:
             brightness (int): Eh, basically ignored.
             
         Return:
@@ -104,7 +104,7 @@ class Device(indicators.indicator.Indicator):
         
         """Report the setting of a colour.
         
-        Arguements:
+        Arguments:
             colour (string): Anything, is ignored.
             
         Returns:

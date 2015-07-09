@@ -59,7 +59,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         
         """Stop the running thread and end the service.
         
-        Arguements:
+        Arguments:
             None
             
         Return:
@@ -74,7 +74,7 @@ class pyliteco_svc (win32serviceutil.ServiceFramework):
         
         """Kick off the thread to run the service.
         
-        Arguements:
+        Arguments:
             None
             
         Return:

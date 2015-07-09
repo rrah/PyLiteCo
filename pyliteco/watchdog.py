@@ -35,7 +35,7 @@ class Watchdog_Thread(object):
         
         """Construct the thread with required arguements.
         
-        Arguements:
+        Arguments:
             config_file (string): Location of the local config file.
             
         Returns:
@@ -48,7 +48,7 @@ class Watchdog_Thread(object):
         
         """Check whether the thread should be running.
         
-        Arguements:
+        Arguments:
             None.
         
         Returns:
@@ -80,7 +80,7 @@ class Watchdog_Thread(object):
         
         """Set off the thread running.
         
-        Arguements:
+        Arguments:
             None.
             
         Returns:
@@ -94,7 +94,7 @@ class Watchdog_Thread(object):
         
         """Set attribute so thread stops running.
         
-        Arguements:
+        Arguments:
             None.
             
         Returns:

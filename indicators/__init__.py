@@ -31,7 +31,7 @@ def get_device(device):
     """Find the relevant device (as given by device) and return
     the class.
     
-    Arguements:
+    Arguments:
         device (string): Case-sensitive string for the device - Currently 'dummy' or 'delcom'.
         
     Return:

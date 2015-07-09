@@ -21,9 +21,12 @@ Copyright (C) 2015 Robert Walker
 # Imports
 import indicators
 import indicators.indicator
+import logging
 import pywinusb
 import pywinusb.hid as hid
 
+
+logger = logging.getLogger(__name__)
 
 
 class Device(indicators.indicator.Indicator):
@@ -74,7 +77,7 @@ class Device(indicators.indicator.Indicator):
         
         """Constructor.
         
-        Arguements:
+        Arguments:
             None.
             
         Returns:
@@ -107,7 +110,7 @@ class Device(indicators.indicator.Indicator):
         
         """Make sure flashing/LEDs are definitely turned off.
         
-        Arguements:
+        Arguments:
             None
             
         Returns:
@@ -123,7 +126,7 @@ class Device(indicators.indicator.Indicator):
         
         """Start the LED's flashing.
         
-        Keyword arguements:
+        Arguments:
             flash_speed (int): Seconds to stay in each state.
                 Floored to 0.01 and ceilinged to 2.55
                 
@@ -159,7 +162,7 @@ class Device(indicators.indicator.Indicator):
         """Check if a pin is actually flashing, and if so
         turn it off and turn off flashing.
         
-        Arguements:
+        Arguments:
             None
         
         Returns:
@@ -176,7 +179,7 @@ class Device(indicators.indicator.Indicator):
         """Put together a packet to be sent to the device. Pads out packet
         with 0x00 to get it to required size.
         
-        Arguements:
+        Arguments:
             maj_cmd (byte): Major command, as defined in Delcom datasheet.
             min_cmd (byte): Minor command, as defined in Delcom datasheet.
             lsb (byte): Least significant byte for data payload.
@@ -192,7 +195,7 @@ class Device(indicators.indicator.Indicator):
         
         """Change brightness of LED's.
         
-        Arguements:
+        Arguments:
             brightness (int): Brightness value between 0 and 100. Below 10 causes flickering.
         
         Returns:
@@ -205,7 +208,7 @@ class Device(indicators.indicator.Indicator):
         
         """Do the low-level sending of data to change brightness.
         
-        Arguements:
+        Arguments:
             pwr (int): Brightness value between 0 and 100.
             
         Returns:
@@ -225,13 +228,15 @@ class Device(indicators.indicator.Indicator):
         
         """Send data to the device.
         
-        Arguements:
+        Arguments:
             data (list): list of bytes to send, in the form returned by _make_packet.
             
         Returns:
             None.
         """
 
+        if not self.device.is_plugged():
+            raise indicators.NoDeviceError()
         for report in self.device.find_feature_reports():
             if report.report_id == data[0]:
                 report[4278190083] = data[1:]
@@ -241,19 +246,22 @@ class Device(indicators.indicator.Indicator):
     
         """See if the button has been pressed.
         
-        Arguements:
+        Arguments:
             None.
         
-        Return: 
+        Returns: 
             True if pressed, False otherwise.
         """
         
         data = None
         while not data:
+            if not self.device.is_plugged():
+                raise indicators.NoDeviceError()
             try:
                 data = self._read_data(8)
-            except hid.HIDError:
-                pass
+            except hid.HIDError as e:
+                # There might be a useful case to see these
+                logger.warning(e)
         if data[8:11] == [0, 0, 0]:
             # Bad data, disregard
             return False
@@ -268,7 +276,7 @@ class Device(indicators.indicator.Indicator):
         
         """Get data from the device with the relevant command.
         
-        Arguements:
+        Arguments:
             cmd (int): Command to read, as defined in Delcom datasheet.
             
         Returns:
@@ -285,7 +293,7 @@ class Device(indicators.indicator.Indicator):
         
         """Check what the current colour is.
         
-        Arguements:
+        Arguments:
             None.
             
         Returns:
@@ -298,7 +306,7 @@ class Device(indicators.indicator.Indicator):
         
         """Change the colour of the light in the indicator.
         
-        Arguements:
+        Arguments:
             colour (string): Colour to set the LED's to.
             
         Returns:
@@ -329,7 +337,7 @@ class Device(indicators.indicator.Indicator):
         
         """Check if flashing and stop flashing, then set colour.
         
-        Arguements:
+        Arguments:
             colour (string): Colour to set the LED's to.
             
         Returns:
@@ -370,9 +378,10 @@ class Device(indicators.indicator.Indicator):
         """Stop any flashing and set the light to off at destruction."""
         
         try:
-            self.flashing_stop()
-            self.set_light_off()
-            self.device.close()
+            if self.device.is_open():
+                self.flashing_stop()
+                self.set_light_off()
+                self.device.close()
         except AttributeError:
             # Device wasn't created succesfully
             pass

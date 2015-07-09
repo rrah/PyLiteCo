@@ -140,26 +140,40 @@ def _get_file(url):
     """Wrapper to grab a file and raise an exception if the file
     is not valid.
     
-    Arguements:
+    Arguments:
         url (string): URL to get the file from.
         
     Returns:
         file_ (string): Body of the file.
     """
     
-    file_ = urllib.request.urlopen(url).read().decode("utf-8")
-    if file_ == '404' or file_ == '' or '<html>' in file_:
-        raise EchoipError('Server returned 404')
-    else:
-        return file_
+    try:
+        file_ = urllib.request.urlopen(url).read().decode("utf-8")
+        if '<html>' in file_:
+            # Oops, wrong place
+            raise EchoipError("Server responded with HTML document, check URL and try again.")
+        if file_ == '404' or file_ == '' or 'Not Found' in file_:
+            raise EchoipError("Server doesn't know this client.")
+        else:
+            return file_
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            err404 = True
+        else:
+            raise err
+    if err404:
+        raise EchoipError('Server returned 404.')
 
 
 def get_echo_ip(server_url):
     
     """Get the IP this indicator should be looking at.
     
+    Arguments:
+        server_url (string): URL of the config server.
+    
     Returns:
-        ip (string): String containing the IP
+        ip (string): String containing the IP of the echo box.
     """
     
     return _get_file(server_url)
@@ -170,8 +184,9 @@ def get_light_state_config(server_url):
     """Get the configuration to map echo box states to light states
     from the config server.
     
-    Arguements:
-        None.
+    Arguments:
+        server_url (string): URL of the config server, including page.
+                            e.g. http://example.com/pyliteco.php.
         
     Returns:
         Light state config in data structure.
@@ -184,8 +199,9 @@ def get_echo_config(server_url):
     
     """Get the full config from the config server.
     
-    Arguements:
-        None
+    Arguments:
+        server_url (string): URL of the config server, including page.
+                            e.g. http://example.com/pyliteco.php.
         
     Returns:
         Configuration data structure.
@@ -197,4 +213,4 @@ def get_echo_config(server_url):
 
 
 if __name__ == '__main__':
-    print(get_echo_config())
+    print(get_echo_config('http://yorkie.york.ac.uk/echolight.php'))
