@@ -92,12 +92,17 @@ class Device(indicators.indicator.Indicator):
         self._current_colour = 'off'
         
         filter = hid.HidDeviceFilter(vendor_id = self.VENDOR_ID, product_id = self.PRODUCT_ID)
-        try:
-            self.device = filter.get_devices()[0]
-        except IndexError:
-            raise indicators.NoDeviceError
-        
-        self.device.open()
+        for device in filter.get_devices():
+            try:
+                self.device = device
+                self.device.open()
+                assert len(self.device.find_feature_reports()) != 0
+                break
+            except IndexError:
+                raise indicators.NoDeviceError
+            except AssertionError:
+                logger.warning("Got device without any reports, ignoring.")
+                continue
         
         self._force_off()
         
@@ -239,7 +244,8 @@ class Device(indicators.indicator.Indicator):
             raise indicators.NoDeviceError()
         for report in self.device.find_feature_reports():
             if report.report_id == data[0]:
-                report[4278190083] = data[1:]
+                assert len(report.keys()) == 1
+                report[list(report.keys())[0]] = data[1:]
                 report.send()
 
     def read_switch(self):
